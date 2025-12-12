@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bazzani Arcade - Icon Generator</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            background: #f0f0f0;
+        }
+        .canvas-container {
+            margin: 20px 0;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+        }
+        canvas {
+            border: 1px solid #ccc;
+            margin: 10px;
+        }
+        button {
+            background: #00D4FF;
+            color: black;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            margin: 5px;
+        }
+        button:hover {
+            background: #00B8DD;
+        }
+        h2 {
+            color: #333;
+        }
+    </style>
+</head>
+<body>
+    <h1>Bazzani Arcade - Icon Generator</h1>
+    <p>Click the buttons below to download the icons for your app.</p>
+
+    <div class="canvas-container">
+        <h2>App Icon (1024x1024)</h2>
+        <canvas id="appIcon" width="1024" height="1024"></canvas>
+        <br>
+        <button onclick="downloadCanvas('appIcon', 'icon.png')">Download App Icon</button>
+    </div>
+
+    <div class="canvas-container">
+        <h2>Splash Icon (800x800)</h2>
+        <canvas id="splashIcon" width="800" height="800"></canvas>
+        <br>
+        <button onclick="downloadCanvas('splashIcon', 'splash-icon.png')">Download Splash Icon</button>
+    </div>
+
+    <div class="canvas-container">
+        <h2>Android Adaptive Icon Foreground (1024x1024)</h2>
+        <canvas id="androidForeground" width="1024" height="1024"></canvas>
+        <br>
+        <button onclick="downloadCanvas('androidForeground', 'android-icon-foreground.png')">Download Android Foreground</button>
+    </div>
+
+    <div class="canvas-container">
+        <h2>Android Adaptive Icon Background (1024x1024)</h2>
+        <canvas id="androidBackground" width="1024" height="1024"></canvas>
+        <br>
+        <button onclick="downloadCanvas('androidBackground', 'android-icon-background.png')">Download Android Background</button>
+    </div>
+
+    <div class="canvas-container">
+        <h2>Android Monochrome Icon (1024x1024)</h2>
+        <canvas id="androidMonochrome" width="1024" height="1024"></canvas>
+        <br>
+        <button onclick="downloadCanvas('androidMonochrome', 'android-icon-monochrome.png')">Download Android Monochrome</button>
+    </div>
+
+    <div class="canvas-container">
+        <h2>Favicon (48x48)</h2>
+        <canvas id="favicon" width="48" height="48"></canvas>
+        <br>
+        <button onclick="downloadCanvas('favicon', 'favicon.png')">Download Favicon</button>
+    </div>
+
+    <script>
+        // App Icon (1024x1024) - Logo "B" in square with rounded corners
+        function drawAppIcon() {
+            const canvas = document.getElementById('appIcon');
+            const ctx = canvas.getContext('2d');
+            const size = 1024;
+
+            // Background
+            ctx.fillStyle = '#00D4FF';
+            ctx.fillRect(0, 0, size, size);
+
+            // Draw rounded square background
+            const cornerRadius = 180;
+            ctx.fillStyle = '#00D4FF';
+            roundRect(ctx, 0, 0, size, size, cornerRadius);
+
+            // Draw "B" letter
+            ctx.fillStyle = '#000000';
+            ctx.font = 'bold 720px Arial';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('B', size / 2, size / 2 + 20);
+        }
+
+        // Splash Icon (800x800) - Logo with text
+        function drawSplashIcon() {
+            const canvas = document.getElementById('splashIcon');
+            const ctx = canvas.getContext('2d');
+            const size = 800;
+
+            // Clear background (transparent)
+            ctx.clearRect(0, 0, size, size);
+
+            // Draw square with "B"
+            const squareSize = 280;
+            const squareX = (size - squareSize) / 2;
+            const squareY = 180;
+
+            ctx.fillStyle = '#00D4FF';
+            roundRect(ctx, squareX, squareY, squareSize, squareSize, 40);
+
+            ctx.fillStyle = '#000000';
+            ctx.font = 'bold 200px Arial';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('B', size / 2, squareY + squareSize / 2 + 10);
+
+            // Draw "BAZZANI" text
+            ctx.fillStyle = '#FFFFFF';
+            ctx.font = 'bold 72px Arial';
+            ctx.letterSpacing = '4px';
+            ctx.fillText('BAZZANI', size / 2, 520);
+
+            // Draw "ARCADE" text
+            ctx.fillStyle = '#FF6600';
+            ctx.font = 'bold 36px Arial';
+            ctx.letterSpacing = '8px';
+            ctx.fillText('ARCADE', size / 2, 580);
+        }
+
+        // Android Foreground (1024x1024) - "B" logo centered with safe zone
+        function drawAndroidForeground() {
+            const canvas = document.getElementById('androidForeground');
+            const ctx = canvas.getContext('2d');
+            const size = 1024;
+
+            // Clear background (transparent)
+            ctx.clearRect(0, 0, size, size);
+
+            // Safe zone: center 432x432 (66% of 1024)
+            const logoSize = 520;
+            const logoX = (size - logoSize) / 2;
+            const logoY = (size - logoSize) / 2;
+
+            // Draw square with "B"
+            ctx.fillStyle = '#00D4FF';
+            roundRect(ctx, logoX, logoY, logoSize, logoSize, 80);
+
+            ctx.fillStyle = '#000000';
+            ctx.font = 'bold 380px Arial';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('B', size / 2, size / 2 + 12);
+        }
+
+        // Android Background (1024x1024) - Solid color
+        function drawAndroidBackground() {
+            const canvas = document.getElementById('androidBackground');
+            const ctx = canvas.getContext('2d');
+            const size = 1024;
+
+            // Black background
+            ctx.fillStyle = '#000000';
+            ctx.fillRect(0, 0, size, size);
+        }
+
+        // Android Monochrome (1024x1024) - "B" in white
+        function drawAndroidMonochrome() {
+            const canvas = document.getElementById('androidMonochrome');
+            const ctx = canvas.getContext('2d');
+            const size = 1024;
+
+            // Clear background (transparent)
+            ctx.clearRect(0, 0, size, size);
+
+            // Draw "B" in white
+            ctx.fillStyle = '#FFFFFF';
+            ctx.font = 'bold 720px Arial';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('B', size / 2, size / 2 + 20);
+        }
+
+        // Favicon (48x48) - Small "B"
+        function drawFavicon() {
+            const canvas = document.getElementById('favicon');
+            const ctx = canvas.getContext('2d');
+            const size = 48;
+
+            // Background
+            ctx.fillStyle = '#00D4FF';
+            roundRect(ctx, 0, 0, size, size, 8);
+
+            // Draw "B"
+            ctx.fillStyle = '#000000';
+            ctx.font = 'bold 36px Arial';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('B', size / 2, size / 2 + 1);
+        }
+
+        // Helper function to draw rounded rectangles
+        function roundRect(ctx, x, y, width, height, radius) {
+            ctx.beginPath();
+            ctx.moveTo(x + radius, y);
+            ctx.lineTo(x + width - radius, y);
+            ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
+            ctx.lineTo(x + width, y + height - radius);
+            ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
+            ctx.lineTo(x + radius, y + height);
+            ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
+            ctx.lineTo(x, y + radius);
+            ctx.quadraticCurveTo(x, y, x + radius, y);
+            ctx.closePath();
+            ctx.fill();
+        }
+
+        // Download function
+        function downloadCanvas(canvasId, filename) {
+            const canvas = document.getElementById(canvasId);
+            const link = document.createElement('a');
+            link.download = filename;
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+        }
+
+        // Draw all icons on page load
+        window.onload = function() {
+            drawAppIcon();
+            drawSplashIcon();
+            drawAndroidForeground();
+            drawAndroidBackground();
+            drawAndroidMonochrome();
+            drawFavicon();
+        };
+    </script>
+</body>
+</html>

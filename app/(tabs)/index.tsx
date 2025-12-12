@@ -1,98 +1,202 @@
-import { Image } from 'expo-image';
-import { Platform, StyleSheet } from 'react-native';
-
-import { HelloWave } from '@/components/hello-wave';
-import ParallaxScrollView from '@/components/parallax-scroll-view';
+import { StyleSheet, TouchableOpacity, View } from 'react-native';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { Link } from 'expo-router';
+import { useRouter } from 'expo-router';
+
+interface Game {
+  id: string;
+  name: string;
+  description: string;
+  route: string;
+  icon: string;
+  color: string;
+}
+
+const games: Game[] = [
+  {
+    id: '1',
+    name: 'Tetris',
+    description: 'Classic block puzzle game',
+    route: '/games/tetris',
+    icon: '🎮',
+    color: '#4A90E2',
+  },
+  {
+    id: '2',
+    name: 'Galaxy Shooter',
+    description: 'Space combat arcade action',
+    route: '/games/galaxy',
+    icon: '🚀',
+    color: '#00D4FF',
+  },
+  {
+    id: '3',
+    name: 'Snake',
+    description: 'Eat, grow, survive!',
+    route: '/games/snake',
+    icon: '🐍',
+    color: '#4CAF50',
+  },
+  {
+    id: '4',
+    name: 'Flappy Bird',
+    description: 'Tap to fly through pipes',
+    route: '/games/flappy',
+    icon: '🐤',
+    color: '#FFD93D',
+  },
+  {
+    id: '5',
+    name: 'Breakout',
+    description: 'Smash all the bricks!',
+    route: '/games/breakout',
+    icon: '🧱',
+    color: '#FF4757',
+  },
+];
 
 export default function HomeScreen() {
-  return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: '#A1CEDC', dark: '#1D3D47' }}
-      headerImage={
-        <Image
-          source={require('@/assets/images/partial-react-logo.png')}
-          style={styles.reactLogo}
-        />
-      }>
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Welcome!</ThemedText>
-        <HelloWave />
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 1: Try it</ThemedText>
-        <ThemedText>
-          Edit <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> to see changes.
-          Press{' '}
-          <ThemedText type="defaultSemiBold">
-            {Platform.select({
-              ios: 'cmd + d',
-              android: 'cmd + m',
-              web: 'F12',
-            })}
-          </ThemedText>{' '}
-          to open developer tools.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <Link href="/modal">
-          <Link.Trigger>
-            <ThemedText type="subtitle">Step 2: Explore</ThemedText>
-          </Link.Trigger>
-          <Link.Preview />
-          <Link.Menu>
-            <Link.MenuAction title="Action" icon="cube" onPress={() => alert('Action pressed')} />
-            <Link.MenuAction
-              title="Share"
-              icon="square.and.arrow.up"
-              onPress={() => alert('Share pressed')}
-            />
-            <Link.Menu title="More" icon="ellipsis">
-              <Link.MenuAction
-                title="Delete"
-                icon="trash"
-                destructive
-                onPress={() => alert('Delete pressed')}
-              />
-            </Link.Menu>
-          </Link.Menu>
-        </Link>
+  const router = useRouter();
 
-        <ThemedText>
-          {`Tap the Explore tab to learn more about what's included in this starter app.`}
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 3: Get a fresh start</ThemedText>
-        <ThemedText>
-          {`When you're ready, run `}
-          <ThemedText type="defaultSemiBold">npm run reset-project</ThemedText> to get a fresh{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> directory. This will move the current{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> to{' '}
-          <ThemedText type="defaultSemiBold">app-example</ThemedText>.
-        </ThemedText>
-      </ThemedView>
-    </ParallaxScrollView>
+  const handleGamePress = (route: string) => {
+    router.push(route as any);
+  };
+
+  return (
+    <View style={styles.container}>
+      <View style={styles.header}>
+        <View style={styles.logoContainer}>
+          <View style={styles.logoBox}>
+            <ThemedText style={styles.logoText}>B</ThemedText>
+          </View>
+          <View style={styles.titleTextContainer}>
+            <ThemedText style={styles.titleText}>BAZZANI</ThemedText>
+            <ThemedText style={styles.arcadeText}>ARCADE</ThemedText>
+          </View>
+        </View>
+      </View>
+
+      <View style={styles.gamesContainer}>
+        {games.map((game) => (
+          <TouchableOpacity
+            key={game.id}
+            style={styles.gameCard}
+            onPress={() => handleGamePress(game.route)}
+            activeOpacity={0.8}
+          >
+            <View style={[styles.iconContainer, { backgroundColor: game.color }]}>
+              <ThemedText style={styles.gameIcon}>{game.icon}</ThemedText>
+            </View>
+            <View style={styles.cardContent}>
+              <ThemedText style={styles.gameName}>
+                {game.name}
+              </ThemedText>
+              <ThemedText style={styles.gameDescription}>
+                {game.description}
+              </ThemedText>
+            </View>
+            <View style={styles.playArrow}>
+              <ThemedText style={styles.playArrowText}>▶</ThemedText>
+            </View>
+          </TouchableOpacity>
+        ))}
+      </View>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  titleContainer: {
+  container: {
+    flex: 1,
+    paddingHorizontal: 24,
+    paddingTop: 60,
+    paddingBottom: 20,
+    backgroundColor: '#000',
+  },
+  header: {
+    marginBottom: 50,
+    alignItems: 'center',
+  },
+  logoContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    gap: 16,
   },
-  stepContainer: {
-    gap: 8,
-    marginBottom: 8,
+  logoBox: {
+    width: 56,
+    height: 56,
+    backgroundColor: '#00D4FF',
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
-  reactLogo: {
-    height: 178,
-    width: 290,
-    bottom: 0,
-    left: 0,
-    position: 'absolute',
+  logoText: {
+    fontSize: 32,
+    fontWeight: '900',
+    color: '#000',
+    lineHeight: 36,
+  },
+  titleTextContainer: {
+    justifyContent: 'center',
+    gap: 2,
+  },
+  titleText: {
+    fontSize: 28,
+    fontWeight: '900',
+    letterSpacing: 2,
+    color: '#fff',
+    lineHeight: 32,
+  },
+  arcadeText: {
+    fontSize: 13,
+    fontWeight: '700',
+    letterSpacing: 4,
+    color: '#FF6600',
+    lineHeight: 16,
+  },
+  gamesContainer: {
+    gap: 16,
+  },
+  gameCard: {
+    flexDirection: 'row',
+    borderRadius: 16,
+    backgroundColor: '#111',
+    alignItems: 'center',
+    minHeight: 100,
+    overflow: 'hidden',
+  },
+  iconContainer: {
+    width: 100,
+    height: 100,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  gameIcon: {
+    fontSize: 40,
+    lineHeight: 48,
+  },
+  cardContent: {
+    flex: 1,
+    paddingVertical: 18,
+    paddingHorizontal: 18,
+  },
+  gameName: {
+    fontSize: 20,
+    fontWeight: '800',
+    color: '#fff',
+    marginBottom: 6,
+    lineHeight: 24,
+  },
+  gameDescription: {
+    fontSize: 13,
+    color: '#888',
+    lineHeight: 18,
+  },
+  playArrow: {
+    paddingRight: 20,
+  },
+  playArrowText: {
+    fontSize: 20,
+    color: '#555',
   },
 });
