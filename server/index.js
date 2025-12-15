@@ -5,7 +5,7 @@ const fs = require('fs');
 const path = require('path');
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 3010;
 const DATA_FILE = path.join(__dirname, 'data', 'scores.json');
 const MAX_SCORES_PER_GAME = 20;
 
