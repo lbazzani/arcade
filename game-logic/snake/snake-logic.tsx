@@ -436,8 +436,9 @@ export const GameLoop = (entities: any, { events, dispatch }: any) => {
           RIGHT: 'LEFT',
         };
 
-        if (newDir !== opposite[current]) {
+        if (newDir !== opposite[current] && newDir !== current) {
           game.nextDirection = newDir;
+          dispatch({ type: 'direction-changed' });
 
           // Il primo input avvia il gioco
           if (!game.gameStarted) {

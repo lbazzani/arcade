@@ -1,9 +1,10 @@
 import React, { useState, useRef } from 'react';
-import { StyleSheet, View, TouchableOpacity, Dimensions, PanResponder } from 'react-native';
+import { StyleSheet, View, Dimensions, PanResponder } from 'react-native';
 import { GameEngine } from 'react-native-game-engine';
-import { ThemedText } from '@/components/themed-text';
 import { GameLayout } from '@/components/game-layout';
+import { GameOverScreen } from '@/components/game-over-screen';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useGameSounds } from '@/hooks/use-game-sounds';
 import {
   initializeGame,
   GameLoop,
@@ -14,28 +15,31 @@ import {
 export default function GalaxyScreen() {
   const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
   const insets = useSafeAreaInsets();
-  // Touch controls optimized for fluid movement
+  const { playFeedback } = useGameSounds();
 
   // Dimensioni componenti (considerando safe area)
   const HEADER_HEIGHT = 60;
   const SCORE_HEIGHT = 35;
-  const CONTROLS_HEIGHT = 70;
 
   // Calcola altezza disponibile per il gioco
-  const GAME_AREA_HEIGHT = SCREEN_HEIGHT - insets.top - HEADER_HEIGHT - SCORE_HEIGHT - CONTROLS_HEIGHT - Math.max(insets.bottom, 10);
-  const GAME_AREA_WIDTH = SCREEN_WIDTH;
+  const GAME_AREA_HEIGHT = SCREEN_HEIGHT - insets.top - HEADER_HEIGHT - SCORE_HEIGHT - Math.max(insets.bottom, 10);
 
-  // Calcola CELL_SIZE per riempire tutta la larghezza
-  const CELL_SIZE = Math.min(GAME_AREA_WIDTH / GAME_WIDTH, GAME_AREA_HEIGHT / GAME_HEIGHT);
+  // Calcola CELL_SIZE per riempire tutta la larghezza dello schermo
+  const CELL_SIZE = SCREEN_WIDTH / GAME_WIDTH;
 
   const [score, setScore] = useState(0);
+  const [lives, setLives] = useState(3);
   const [gameOver, setGameOver] = useState(false);
-  const [entities, setEntities] = useState(initializeGame(CELL_SIZE));
+  const [entities, setEntities] = useState(initializeGame(CELL_SIZE, GAME_AREA_HEIGHT));
   const gameEngineRef = useRef<any>(null);
   const shootIntervalRef = useRef<any>(null);
-  const moveIntervalRef = useRef<any>(null);
-  const initialTouchX = useRef(0);
-  const currentDirection = useRef<'left' | 'right' | null>(null);
+  const gameViewX = useRef(0);
+  const entitiesRef = useRef(entities);
+  const cellSizeRef = useRef(CELL_SIZE);
+
+  // Aggiorna refs
+  entitiesRef.current = entities;
+  cellSizeRef.current = CELL_SIZE;
 
   const dispatchAction = (action: string) => {
     if (gameEngineRef.current && !gameOver) {
@@ -45,9 +49,7 @@ export default function GalaxyScreen() {
 
   const startShooting = () => {
     if (!gameOver && !shootIntervalRef.current) {
-      // Primo colpo immediato
       dispatchAction('shoot');
-      // Poi spara ogni 200ms
       shootIntervalRef.current = setInterval(() => {
         dispatchAction('shoot');
       }, 200);
@@ -61,143 +63,100 @@ export default function GalaxyScreen() {
     }
   };
 
-  const stopMoving = () => {
-    if (moveIntervalRef.current) {
-      clearInterval(moveIntervalRef.current);
-      moveIntervalRef.current = null;
+  // Aggiorna posizione nave in base al tocco
+  const updateShipPosition = (pageX: number) => {
+    const touchX = pageX - gameViewX.current;
+    const gameX = touchX / cellSizeRef.current;
+    // Centro la nave sul dito (larghezza nave = 1.8)
+    const shipX = gameX - 0.9;
+
+    if (entitiesRef.current?.game) {
+      entitiesRef.current.game.targetShipX = Math.max(0, Math.min(GAME_WIDTH - 1.8, shipX));
     }
-    currentDirection.current = null;
   };
 
-  // PanResponder per gestire movimento + sparo
-  const panResponder = PanResponder.create({
-    onStartShouldSetPanResponder: () => !gameOver,
-    onMoveShouldSetPanResponder: () => !gameOver,
-    onPanResponderGrant: (evt) => {
-      initialTouchX.current = evt.nativeEvent.pageX;
-      startShooting();
-    },
-    onPanResponderMove: (evt, gestureState) => {
-      // Calcola direzione basata sul movimento totale
-      const dx = evt.nativeEvent.pageX - initialTouchX.current;
-
-      if (Math.abs(dx) > 5) { // Soglia minima per attivare movimento
-        const newDirection = dx < 0 ? 'left' : 'right';
-
-        // Se la direzione è cambiata, ferma il vecchio intervallo
-        if (newDirection !== currentDirection.current) {
-          if (moveIntervalRef.current) {
-            clearInterval(moveIntervalRef.current);
-            moveIntervalRef.current = null;
-          }
-
-          currentDirection.current = newDirection;
-
-          // Avvia movimento continuo nella nuova direzione
-          const moveAction = newDirection === 'left' ? 'move-left' : 'move-right';
-          dispatchAction(moveAction); // Primo movimento immediato
-
-          moveIntervalRef.current = setInterval(() => {
-            dispatchAction(moveAction);
-          }, 50); // Movimento ogni 50ms per fluidità
-        }
-      } else {
-        // Se siamo vicini al punto iniziale, ferma il movimento
-        if (moveIntervalRef.current) {
-          clearInterval(moveIntervalRef.current);
-          moveIntervalRef.current = null;
-          currentDirection.current = null;
-        }
-      }
-    },
-    onPanResponderRelease: () => {
-      stopShooting();
-      stopMoving();
-    },
-    onPanResponderTerminate: () => {
-      stopShooting();
-      stopMoving();
-    },
-  });
+  // PanResponder per movimento fluido + sparo
+  const panResponder = useRef(
+    PanResponder.create({
+      onStartShouldSetPanResponder: () => true,
+      onMoveShouldSetPanResponder: () => true,
+      onPanResponderGrant: (evt) => {
+        startShooting();
+        updateShipPosition(evt.nativeEvent.pageX);
+      },
+      onPanResponderMove: (evt) => {
+        updateShipPosition(evt.nativeEvent.pageX);
+      },
+      onPanResponderRelease: () => {
+        stopShooting();
+      },
+      onPanResponderTerminate: () => {
+        stopShooting();
+      },
+    })
+  ).current;
 
   const handleEvent = (event: any) => {
     if (event.type === 'game-over') {
       setGameOver(true);
+      playFeedback('gameOver');
     } else if (event.type === 'score-update') {
       setScore(event.score);
+    } else if (event.type === 'lives-update') {
+      setLives(event.lives);
+    } else if (event.type === 'player-hit') {
+      playFeedback('hit');
+    } else if (event.type === 'enemy-destroyed') {
+      playFeedback('enemyDestroyed');
     }
   };
 
   const resetGame = () => {
     setScore(0);
+    setLives(3);
     setGameOver(false);
-    const newEntities = initializeGame(CELL_SIZE);
+    const newEntities = initializeGame(CELL_SIZE, GAME_AREA_HEIGHT);
     setEntities(newEntities);
   };
 
   // Overlay Game Over
   const gameOverOverlay = gameOver ? (
-    <View style={styles.overlay}>
-      <View style={styles.overlayContent}>
-        <View style={styles.textContainer}>
-          <ThemedText style={styles.overlayTitle}>GAME</ThemedText>
-          <ThemedText style={styles.overlayTitle}>OVER</ThemedText>
-        </View>
-        <ThemedText style={styles.overlayScore}>{score}</ThemedText>
-        <TouchableOpacity style={styles.overlayButton} onPress={resetGame}>
-          <ThemedText style={styles.overlayButtonText}>PLAY AGAIN</ThemedText>
-        </TouchableOpacity>
-      </View>
-    </View>
+    <GameOverScreen
+      game="galaxy"
+      score={score}
+      onPlayAgain={resetGame}
+    />
   ) : null;
 
-  // Controlli
-  const controls = (
-    <View style={styles.controlsContainer}>
-      <TouchableOpacity
-        style={[styles.controlButton, styles.sideButton]}
-        onPress={() => dispatchAction('move-left')}
-        disabled={gameOver}
-      >
-        <ThemedText style={styles.controlButtonText}>←</ThemedText>
-      </TouchableOpacity>
-
-      <TouchableOpacity
-        style={[styles.controlButton, styles.centerButton]}
-        onPressIn={startShooting}
-        onPressOut={stopShooting}
-        disabled={gameOver}
-      >
-        <ThemedText style={styles.controlButtonText}>🔥</ThemedText>
-      </TouchableOpacity>
-
-      <TouchableOpacity
-        style={[styles.controlButton, styles.sideButton]}
-        onPress={() => dispatchAction('move-right')}
-        disabled={gameOver}
-      >
-        <ThemedText style={styles.controlButtonText}>→</ThemedText>
-      </TouchableOpacity>
-    </View>
-  );
+  // Genera stringa vite con cuori
+  const livesDisplay = '❤️'.repeat(lives) + '🖤'.repeat(Math.max(0, 3 - lives));
 
   return (
     <GameLayout
-      score={score}
+      title="GALAXY SHOOTER"
+      accentColor="#00D4FF"
       showScore={true}
-      controls={controls}
+      scoreItems={[
+        { label: 'SCORE', value: score },
+        { label: 'LIVES', value: livesDisplay },
+      ]}
       overlay={gameOverOverlay}
     >
-      <View style={[styles.gameContainer, {
-        width: GAME_WIDTH * CELL_SIZE,
-        height: GAME_HEIGHT * CELL_SIZE,
-      }]}>
+      <View
+        style={[styles.gameContainer, {
+          width: SCREEN_WIDTH,
+          height: GAME_AREA_HEIGHT,
+        }]}
+        onLayout={(evt) => {
+          gameViewX.current = 0;
+        }}
+      >
         <GameEngine
           key={gameOver ? 'game-over' : 'running'}
           ref={gameEngineRef}
           style={[styles.gameEngine, {
-            width: GAME_WIDTH * CELL_SIZE,
-            height: GAME_HEIGHT * CELL_SIZE
+            width: SCREEN_WIDTH,
+            height: GAME_AREA_HEIGHT
           }]}
           systems={[GameLoop]}
           entities={entities}
@@ -205,13 +164,12 @@ export default function GalaxyScreen() {
           onEvent={handleEvent}
         />
 
-        {/* Area touch sull'astronave per sparare e muoversi */}
+        {/* Area touch su tutto lo schermo di gioco */}
         <View
           {...panResponder.panHandlers}
-          style={[styles.shipTouchArea, {
-            width: GAME_WIDTH * CELL_SIZE,
-            height: CELL_SIZE * 3,
-            bottom: 0,
+          style={[styles.touchArea, {
+            width: SCREEN_WIDTH,
+            height: GAME_AREA_HEIGHT,
           }]}
         />
       </View>
@@ -221,8 +179,6 @@ export default function GalaxyScreen() {
 
 const styles = StyleSheet.create({
   gameContainer: {
-    borderWidth: 2,
-    borderColor: '#4A90E2',
     overflow: 'hidden',
     backgroundColor: '#000',
     position: 'relative',
@@ -230,104 +186,11 @@ const styles = StyleSheet.create({
   gameEngine: {
     backgroundColor: '#000',
   },
-  shipTouchArea: {
+  touchArea: {
     position: 'absolute',
+    top: 0,
+    left: 0,
     backgroundColor: 'transparent',
     zIndex: 10,
-  },
-  // OVERLAY
-  overlay: {
-    ...StyleSheet.absoluteFillObject,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: 'rgba(0, 0, 0, 0.96)',
-    zIndex: 1000,
-  },
-  overlayContent: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 16,
-    paddingHorizontal: 24,
-    paddingVertical: 40,
-    width: '85%',
-    maxWidth: 400,
-  },
-  textContainer: {
-    alignItems: 'center',
-    gap: 4,
-    marginBottom: 8,
-  },
-  overlayTitle: {
-    fontSize: 36,
-    fontWeight: '900',
-    color: '#fff',
-    letterSpacing: 3,
-    textAlign: 'center',
-    textShadowColor: '#4A90E2',
-    textShadowOffset: { width: 0, height: 0 },
-    textShadowRadius: 12,
-    lineHeight: 42,
-  },
-  overlayScore: {
-    fontSize: 48,
-    fontWeight: '900',
-    color: '#4A90E2',
-    textAlign: 'center',
-    textShadowColor: '#4A90E2',
-    textShadowOffset: { width: 0, height: 0 },
-    textShadowRadius: 16,
-    lineHeight: 56,
-    marginVertical: 12,
-  },
-  overlayButton: {
-    backgroundColor: '#4A90E2',
-    paddingHorizontal: 44,
-    paddingVertical: 14,
-    borderRadius: 28,
-    marginTop: 12,
-    shadowColor: '#4A90E2',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.6,
-    shadowRadius: 8,
-    elevation: 8,
-    minWidth: 180,
-    alignItems: 'center',
-  },
-  overlayButtonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '700',
-    letterSpacing: 2.5,
-    textAlign: 'center',
-  },
-  controlsContainer: {
-    flexDirection: 'row',
-    width: '100%',
-    justifyContent: 'space-evenly',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    height: 70,
-  },
-  controlButton: {
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#1a1a1a',
-    borderWidth: 2,
-    borderColor: '#4A90E2',
-    borderRadius: 28,
-    height: 56,
-  },
-  sideButton: {
-    flex: 1,
-    maxWidth: 120,
-  },
-  centerButton: {
-    flex: 1,
-    maxWidth: 100,
-  },
-  controlButtonText: {
-    fontSize: 24,
-    color: '#4A90E2',
-    fontWeight: 'bold',
   },
 });

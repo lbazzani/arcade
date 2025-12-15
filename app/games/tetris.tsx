@@ -1,9 +1,11 @@
 import React, { useState, useRef } from 'react';
-import { StyleSheet, View, TouchableOpacity, Dimensions } from 'react-native';
+import { StyleSheet, View, TouchableOpacity, Dimensions, PanResponder, GestureResponderEvent } from 'react-native';
 import { GameEngine } from 'react-native-game-engine';
 import { ThemedText } from '@/components/themed-text';
 import { GameLayout } from '@/components/game-layout';
+import { GameOverScreen } from '@/components/game-over-screen';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useGameSounds } from '@/hooks/use-game-sounds';
 import {
   initializeGame,
   GameLoop,
@@ -14,18 +16,18 @@ import {
 export default function TetrisScreen() {
   const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
   const insets = useSafeAreaInsets();
+  const { playFeedback } = useGameSounds();
 
   // Dimensioni componenti (considerando safe area)
   const HEADER_HEIGHT = 60;
   const SCORE_HEIGHT = 35;
-  const CONTROLS_HEIGHT = 70;
 
-  // Calcola altezza disponibile per il gioco
-  const GAME_HEIGHT = SCREEN_HEIGHT - insets.top - HEADER_HEIGHT - SCORE_HEIGHT - CONTROLS_HEIGHT - Math.max(insets.bottom, 10);
-  const GAME_WIDTH = SCREEN_WIDTH;
+  // Calcola altezza disponibile per il gioco (senza controlli ora)
+  const GAME_AREA_HEIGHT = SCREEN_HEIGHT - insets.top - HEADER_HEIGHT - SCORE_HEIGHT - Math.max(insets.bottom, 10);
+  const GAME_AREA_WIDTH = SCREEN_WIDTH;
 
   // Calcola CELL_SIZE per riempire tutta la larghezza
-  const CELL_SIZE = Math.min(GAME_WIDTH / BOARD_WIDTH, GAME_HEIGHT / BOARD_HEIGHT);
+  const CELL_SIZE = Math.min(GAME_AREA_WIDTH / BOARD_WIDTH, GAME_AREA_HEIGHT / BOARD_HEIGHT);
 
   const [score, setScore] = useState(0);
   const [gameOver, setGameOver] = useState(false);
@@ -33,11 +35,25 @@ export default function TetrisScreen() {
   const [entities, setEntities] = useState(initializeGame(CELL_SIZE));
   const gameEngineRef = useRef<any>(null);
 
+  // Gesture tracking
+  const touchStartRef = useRef({ x: 0, y: 0, time: 0 });
+  const hasMoved = useRef(false);
+  const lastMoveX = useRef(0);
+
   const handleEvent = (event: any) => {
     if (event.type === 'game-over') {
       setGameOver(true);
+      playFeedback('gameOver');
     } else if (event.type === 'score-update') {
       setScore(event.score);
+    } else if (event.type === 'lines-cleared') {
+      playFeedback('explosion');
+    } else if (event.type === 'piece-locked') {
+      playFeedback('hit');
+    } else if (event.type === 'piece-moved') {
+      playFeedback('shoot');
+    } else if (event.type === 'piece-rotated') {
+      playFeedback('shoot');
     }
   };
 
@@ -65,20 +81,75 @@ export default function TetrisScreen() {
     }
   };
 
+  // Soglie per i gesti
+  const SWIPE_THRESHOLD = 30; // pixel minimo per uno swipe
+  const TAP_THRESHOLD = 10; // movimento massimo per considerarlo un tap
+  const MOVE_CELL_THRESHOLD = CELL_SIZE * 0.8; // pixel per muovere di una cella
+
+  // PanResponder per gestire tutti i tocchi
+  const panResponder = useRef(
+    PanResponder.create({
+      onStartShouldSetPanResponder: () => true,
+      onMoveShouldSetPanResponder: () => true,
+      onPanResponderGrant: (evt) => {
+        touchStartRef.current = {
+          x: evt.nativeEvent.pageX,
+          y: evt.nativeEvent.pageY,
+          time: Date.now(),
+        };
+        hasMoved.current = false;
+        lastMoveX.current = evt.nativeEvent.pageX;
+      },
+      onPanResponderMove: (evt) => {
+        if (gameOver || isPaused) return;
+
+        const currentX = evt.nativeEvent.pageX;
+        const currentY = evt.nativeEvent.pageY;
+        const deltaX = currentX - touchStartRef.current.x;
+        const deltaY = currentY - touchStartRef.current.y;
+
+        // Movimento orizzontale continuo (sposta pezzo)
+        const movesDelta = currentX - lastMoveX.current;
+        if (Math.abs(movesDelta) >= MOVE_CELL_THRESHOLD) {
+          if (movesDelta > 0) {
+            dispatchMove('move-right');
+          } else {
+            dispatchMove('move-left');
+          }
+          lastMoveX.current = currentX;
+          hasMoved.current = true;
+        }
+
+        // Swipe veloce verso il basso = hard drop
+        if (deltaY > SWIPE_THRESHOLD * 2 && Math.abs(deltaX) < SWIPE_THRESHOLD) {
+          if (!hasMoved.current) {
+            handleDrop();
+            hasMoved.current = true;
+          }
+        }
+      },
+      onPanResponderRelease: (evt) => {
+        if (gameOver || isPaused) return;
+
+        const deltaX = evt.nativeEvent.pageX - touchStartRef.current.x;
+        const deltaY = evt.nativeEvent.pageY - touchStartRef.current.y;
+        const elapsed = Date.now() - touchStartRef.current.time;
+
+        // Tap = ruota (poco movimento e tempo breve)
+        if (Math.abs(deltaX) < TAP_THRESHOLD && Math.abs(deltaY) < TAP_THRESHOLD && elapsed < 300) {
+          dispatchMove('rotate');
+        }
+      },
+    })
+  ).current;
+
   // Overlay Game Over
   const gameOverOverlay = gameOver ? (
-    <View style={styles.overlay}>
-      <View style={styles.overlayContent}>
-        <View style={styles.textContainer}>
-          <ThemedText style={styles.overlayTitle}>GAME</ThemedText>
-          <ThemedText style={styles.overlayTitle}>OVER</ThemedText>
-        </View>
-        <ThemedText style={styles.overlayScore}>{score}</ThemedText>
-        <TouchableOpacity style={styles.overlayButton} onPress={resetGame}>
-          <ThemedText style={styles.overlayButtonText}>PLAY AGAIN</ThemedText>
-        </TouchableOpacity>
-      </View>
-    </View>
+    <GameOverScreen
+      game="tetris"
+      score={score}
+      onPlayAgain={resetGame}
+    />
   ) : null;
 
   // Overlay Pausa
@@ -91,54 +162,28 @@ export default function TetrisScreen() {
     </View>
   ) : null;
 
-  // Controlli
-  const controls = (
-    <View style={styles.controlsContainer}>
-      <TouchableOpacity
-        style={[styles.controlButton, styles.sideButton]}
-        onPress={() => dispatchMove('move-left')}
-        disabled={gameOver || isPaused}
-      >
-        <ThemedText style={styles.controlButtonText}>←</ThemedText>
-      </TouchableOpacity>
-
-      <TouchableOpacity
-        style={[styles.controlButton, styles.centerButton]}
-        onPress={() => dispatchMove('rotate')}
-        disabled={gameOver || isPaused}
-      >
-        <ThemedText style={styles.controlButtonText}>↻</ThemedText>
-      </TouchableOpacity>
-
-      <TouchableOpacity
-        style={[styles.controlButton, styles.centerButton]}
-        onPress={handleDrop}
-        disabled={gameOver || isPaused}
-      >
-        <ThemedText style={styles.controlButtonText}>↓</ThemedText>
-      </TouchableOpacity>
-
-      <TouchableOpacity
-        style={[styles.controlButton, styles.sideButton]}
-        onPress={() => dispatchMove('move-right')}
-        disabled={gameOver || isPaused}
-      >
-        <ThemedText style={styles.controlButtonText}>→</ThemedText>
-      </TouchableOpacity>
+  // Hint controlli (mostrato brevemente all'inizio)
+  const controlsHint = !gameOver && !isPaused ? (
+    <View style={styles.hintContainer}>
+      <ThemedText style={styles.hintText}>TAP = Rotate • SWIPE ← → = Move • SWIPE ↓ = Drop</ThemedText>
     </View>
-  );
+  ) : null;
 
   return (
     <GameLayout
+      title="TETRIS"
+      accentColor="#4A90E2"
       score={score}
       showScore={true}
-      controls={controls}
       overlay={gameOverOverlay || pauseOverlay}
     >
-      <View style={[styles.gameContainer, {
-        width: BOARD_WIDTH * CELL_SIZE,
-        height: BOARD_HEIGHT * CELL_SIZE,
-      }]}>
+      <View
+        style={[styles.gameContainer, {
+          width: BOARD_WIDTH * CELL_SIZE,
+          height: BOARD_HEIGHT * CELL_SIZE,
+        }]}
+        {...panResponder.panHandlers}
+      >
         <GameEngine
           key={gameOver ? 'game-over' : 'running'}
           ref={gameEngineRef}
@@ -152,6 +197,7 @@ export default function TetrisScreen() {
           onEvent={handleEvent}
         />
       </View>
+      {controlsHint}
     </GameLayout>
   );
 }
@@ -166,27 +212,12 @@ const styles = StyleSheet.create({
   gameEngine: {
     backgroundColor: '#000',
   },
-  // OVERLAY: copre tutto lo schermo (viene posizionato in GameLayout)
   overlay: {
     ...StyleSheet.absoluteFillObject,
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: 'rgba(0, 0, 0, 0.96)',
     zIndex: 1000,
-  },
-  overlayContent: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 16,
-    paddingHorizontal: 24,
-    paddingVertical: 40,
-    width: '85%',
-    maxWidth: 400,
-  },
-  textContainer: {
-    alignItems: 'center',
-    gap: 4,
-    marginBottom: 8,
   },
   overlayTitle: {
     fontSize: 36,
@@ -198,17 +229,6 @@ const styles = StyleSheet.create({
     textShadowOffset: { width: 0, height: 0 },
     textShadowRadius: 12,
     lineHeight: 42,
-  },
-  overlayScore: {
-    fontSize: 48,
-    fontWeight: '900',
-    color: '#4A90E2',
-    textAlign: 'center',
-    textShadowColor: '#4A90E2',
-    textShadowOffset: { width: 0, height: 0 },
-    textShadowRadius: 16,
-    lineHeight: 56,
-    marginVertical: 12,
   },
   overlayButton: {
     backgroundColor: '#4A90E2',
@@ -231,34 +251,14 @@ const styles = StyleSheet.create({
     letterSpacing: 2.5,
     textAlign: 'center',
   },
-  controlsContainer: {
-    flexDirection: 'row',
-    width: '100%',
-    justifyContent: 'space-evenly',
-    alignItems: 'center',
+  hintContainer: {
+    paddingVertical: 12,
     paddingHorizontal: 16,
-    height: 70,
   },
-  controlButton: {
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#1a1a1a',
-    borderWidth: 2,
-    borderColor: '#4A90E2',
-    borderRadius: 28,
-    height: 56,
-  },
-  sideButton: {
-    flex: 1,
-    maxWidth: 100,
-  },
-  centerButton: {
-    flex: 1,
-    maxWidth: 90,
-  },
-  controlButtonText: {
-    fontSize: 24,
-    color: '#4A90E2',
-    fontWeight: 'bold',
+  hintText: {
+    fontSize: 12,
+    color: '#666',
+    textAlign: 'center',
+    letterSpacing: 0.5,
   },
 });

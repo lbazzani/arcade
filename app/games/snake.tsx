@@ -1,9 +1,11 @@
 import React, { useState, useRef } from 'react';
-import { StyleSheet, View, TouchableOpacity, Dimensions, PanResponder } from 'react-native';
+import { StyleSheet, View, Dimensions, PanResponder } from 'react-native';
 import { GameEngine } from 'react-native-game-engine';
 import { ThemedText } from '@/components/themed-text';
 import { GameLayout } from '@/components/game-layout';
+import { GameOverScreen } from '@/components/game-over-screen';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useGameSounds } from '@/hooks/use-game-sounds';
 import {
   initializeGame,
   GameLoop,
@@ -14,6 +16,7 @@ import {
 export default function SnakeScreen() {
   const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
   const insets = useSafeAreaInsets();
+  const { playFeedback } = useGameSounds();
 
   // Dimensioni componenti - più spazio per il gioco senza D-pad
   const HEADER_HEIGHT = 60;
@@ -85,8 +88,12 @@ export default function SnakeScreen() {
   const handleEvent = (event: any) => {
     if (event.type === 'game-over') {
       setGameOver(true);
+      playFeedback('gameOver');
     } else if (event.type === 'score-update') {
       setScore(event.score);
+      playFeedback('powerup');
+    } else if (event.type === 'direction-changed') {
+      playFeedback('shoot');
     }
   };
 
@@ -101,18 +108,11 @@ export default function SnakeScreen() {
 
   // Overlay Game Over
   const gameOverOverlay = gameOver ? (
-    <View style={styles.overlay}>
-      <View style={styles.overlayContent}>
-        <View style={styles.textContainer}>
-          <ThemedText style={styles.overlayTitle}>GAME</ThemedText>
-          <ThemedText style={styles.overlayTitle}>OVER</ThemedText>
-        </View>
-        <ThemedText style={styles.overlayScore}>{score}</ThemedText>
-        <TouchableOpacity style={styles.overlayButton} onPress={resetGame}>
-          <ThemedText style={styles.overlayButtonText}>PLAY AGAIN</ThemedText>
-        </TouchableOpacity>
-      </View>
-    </View>
+    <GameOverScreen
+      game="snake"
+      score={score}
+      onPlayAgain={resetGame}
+    />
   ) : null;
 
   // Hint per i controlli (invece dei bottoni)
@@ -126,6 +126,8 @@ export default function SnakeScreen() {
 
   return (
     <GameLayout
+      title="SNAKE"
+      accentColor="#4CAF50"
       score={score}
       showScore={true}
       controls={controls}
@@ -164,7 +166,7 @@ export default function SnakeScreen() {
 const styles = StyleSheet.create({
   gameContainer: {
     borderWidth: 2,
-    borderColor: '#00D4FF',
+    borderColor: '#4CAF50',
     overflow: 'hidden',
     backgroundColor: '#1a1a1a',
   },
@@ -180,7 +182,7 @@ const styles = StyleSheet.create({
   hintText: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#00D4FF',
+    color: '#4CAF50',
     letterSpacing: 2,
     opacity: 0.8,
   },
@@ -196,7 +198,7 @@ const styles = StyleSheet.create({
     fontWeight: '900',
     color: '#fff',
     letterSpacing: 4,
-    textShadowColor: '#00D4FF',
+    textShadowColor: '#4CAF50',
     textShadowOffset: { width: 0, height: 0 },
     textShadowRadius: 15,
   },
@@ -206,70 +208,5 @@ const styles = StyleSheet.create({
     color: '#aaa',
     marginTop: 12,
     letterSpacing: 2,
-  },
-  // GAME OVER OVERLAY
-  overlay: {
-    ...StyleSheet.absoluteFillObject,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: 'rgba(0, 0, 0, 0.96)',
-    zIndex: 1000,
-  },
-  overlayContent: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 16,
-    paddingHorizontal: 24,
-    paddingVertical: 40,
-    width: '85%',
-    maxWidth: 400,
-  },
-  textContainer: {
-    alignItems: 'center',
-    gap: 4,
-    marginBottom: 8,
-  },
-  overlayTitle: {
-    fontSize: 36,
-    fontWeight: '900',
-    color: '#fff',
-    letterSpacing: 3,
-    textAlign: 'center',
-    textShadowColor: '#00D4FF',
-    textShadowOffset: { width: 0, height: 0 },
-    textShadowRadius: 12,
-    lineHeight: 42,
-  },
-  overlayScore: {
-    fontSize: 48,
-    fontWeight: '900',
-    color: '#00D4FF',
-    textAlign: 'center',
-    textShadowColor: '#00D4FF',
-    textShadowOffset: { width: 0, height: 0 },
-    textShadowRadius: 16,
-    lineHeight: 56,
-    marginVertical: 12,
-  },
-  overlayButton: {
-    backgroundColor: '#00D4FF',
-    paddingHorizontal: 44,
-    paddingVertical: 14,
-    borderRadius: 28,
-    marginTop: 12,
-    shadowColor: '#00D4FF',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.6,
-    shadowRadius: 8,
-    elevation: 8,
-    minWidth: 180,
-    alignItems: 'center',
-  },
-  overlayButtonText: {
-    color: '#000',
-    fontSize: 16,
-    fontWeight: '700',
-    letterSpacing: 2.5,
-    textAlign: 'center',
   },
 });

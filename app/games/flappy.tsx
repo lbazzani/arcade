@@ -3,7 +3,9 @@ import { StyleSheet, View, TouchableOpacity, Dimensions } from 'react-native';
 import { GameEngine } from 'react-native-game-engine';
 import { ThemedText } from '@/components/themed-text';
 import { GameLayout } from '@/components/game-layout';
+import { GameOverScreen } from '@/components/game-over-screen';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useGameSounds } from '@/hooks/use-game-sounds';
 import {
   initializeGame,
   GameLoop,
@@ -14,6 +16,7 @@ import {
 export default function FlappyScreen() {
   const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
   const insets = useSafeAreaInsets();
+  const { playFeedback } = useGameSounds();
 
   const HEADER_HEIGHT = 60;
   const SCORE_HEIGHT = 35;
@@ -45,14 +48,17 @@ export default function FlappyScreen() {
 
     if (gameEngineRef.current) {
       gameEngineRef.current.dispatch({ type: 'jump' });
+      playFeedback('shoot');
     }
   };
 
   const handleEvent = (event: any) => {
     if (event.type === 'game-over') {
       setGameOver(true);
+      playFeedback('gameOver');
     } else if (event.type === 'score-update') {
       setScore(event.score);
+      playFeedback('powerup');
     }
   };
 
@@ -65,18 +71,11 @@ export default function FlappyScreen() {
   };
 
   const gameOverOverlay = gameOver ? (
-    <View style={styles.overlay}>
-      <View style={styles.overlayContent}>
-        <View style={styles.textContainer}>
-          <ThemedText style={styles.overlayTitle}>GAME</ThemedText>
-          <ThemedText style={styles.overlayTitle}>OVER</ThemedText>
-        </View>
-        <ThemedText style={styles.overlayScore}>{score}</ThemedText>
-        <TouchableOpacity style={styles.overlayButton} onPress={resetGame}>
-          <ThemedText style={styles.overlayButtonText}>PLAY AGAIN</ThemedText>
-        </TouchableOpacity>
-      </View>
-    </View>
+    <GameOverScreen
+      game="flappy"
+      score={score}
+      onPlayAgain={resetGame}
+    />
   ) : null;
 
   const controls = (
@@ -89,6 +88,8 @@ export default function FlappyScreen() {
 
   return (
     <GameLayout
+      title="FLAPPY BIRD"
+      accentColor="#FFD93D"
       score={score}
       showScore={true}
       controls={controls}
@@ -171,69 +172,5 @@ const styles = StyleSheet.create({
     textShadowColor: '#000',
     textShadowOffset: { width: 1, height: 1 },
     textShadowRadius: 3,
-  },
-  overlay: {
-    ...StyleSheet.absoluteFillObject,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: 'rgba(0, 0, 0, 0.96)',
-    zIndex: 1000,
-  },
-  overlayContent: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 16,
-    paddingHorizontal: 24,
-    paddingVertical: 40,
-    width: '85%',
-    maxWidth: 400,
-  },
-  textContainer: {
-    alignItems: 'center',
-    gap: 4,
-    marginBottom: 8,
-  },
-  overlayTitle: {
-    fontSize: 36,
-    fontWeight: '900',
-    color: '#fff',
-    letterSpacing: 3,
-    textAlign: 'center',
-    textShadowColor: '#FFD93D',
-    textShadowOffset: { width: 0, height: 0 },
-    textShadowRadius: 12,
-    lineHeight: 42,
-  },
-  overlayScore: {
-    fontSize: 48,
-    fontWeight: '900',
-    color: '#FFD93D',
-    textAlign: 'center',
-    textShadowColor: '#FFD93D',
-    textShadowOffset: { width: 0, height: 0 },
-    textShadowRadius: 16,
-    lineHeight: 56,
-    marginVertical: 12,
-  },
-  overlayButton: {
-    backgroundColor: '#FFD93D',
-    paddingHorizontal: 44,
-    paddingVertical: 14,
-    borderRadius: 28,
-    marginTop: 12,
-    shadowColor: '#FFD93D',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.6,
-    shadowRadius: 8,
-    elevation: 8,
-    minWidth: 180,
-    alignItems: 'center',
-  },
-  overlayButtonText: {
-    color: '#000',
-    fontSize: 16,
-    fontWeight: '700',
-    letterSpacing: 2.5,
-    textAlign: 'center',
   },
 });

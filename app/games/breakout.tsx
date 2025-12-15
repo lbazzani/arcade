@@ -1,9 +1,11 @@
 import React, { useState, useRef } from 'react';
-import { StyleSheet, View, TouchableOpacity, Dimensions, PanResponder } from 'react-native';
+import { StyleSheet, View, Dimensions, PanResponder } from 'react-native';
 import { GameEngine } from 'react-native-game-engine';
 import { ThemedText } from '@/components/themed-text';
 import { GameLayout } from '@/components/game-layout';
+import { GameOverScreen } from '@/components/game-over-screen';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useGameSounds } from '@/hooks/use-game-sounds';
 import {
   initializeGame,
   GameLoop,
@@ -14,6 +16,7 @@ import {
 export default function BreakoutScreen() {
   const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
   const insets = useSafeAreaInsets();
+  const { playFeedback } = useGameSounds();
 
   const HEADER_HEIGHT = 60;
   const SCORE_HEIGHT = 35;
@@ -73,12 +76,25 @@ export default function BreakoutScreen() {
   const handleEvent = (event: any) => {
     if (event.type === 'game-over') {
       setGameOver(true);
+      playFeedback('gameOver');
     } else if (event.type === 'win') {
       setWon(true);
+      playFeedback('powerup');
     } else if (event.type === 'score-update') {
       setScore(event.score);
     } else if (event.type === 'lives-update') {
       setLives(event.lives);
+      if (event.lives < lives) {
+        playFeedback('hit');
+      }
+    } else if (event.type === 'brick-hit') {
+      playFeedback('shoot');
+    } else if (event.type === 'paddle-hit') {
+      playFeedback('shoot');
+    } else if (event.type === 'wall-hit') {
+      playFeedback('shoot');
+    } else if (event.type === 'powerup-collected') {
+      playFeedback('powerup');
     }
   };
 
@@ -92,33 +108,20 @@ export default function BreakoutScreen() {
   };
 
   const gameOverOverlay = gameOver ? (
-    <View style={styles.overlay}>
-      <View style={styles.overlayContent}>
-        <View style={styles.textContainer}>
-          <ThemedText style={styles.overlayTitle}>GAME</ThemedText>
-          <ThemedText style={styles.overlayTitle}>OVER</ThemedText>
-        </View>
-        <ThemedText style={styles.overlayScore}>{score}</ThemedText>
-        <TouchableOpacity style={styles.overlayButton} onPress={resetGame}>
-          <ThemedText style={styles.overlayButtonText}>PLAY AGAIN</ThemedText>
-        </TouchableOpacity>
-      </View>
-    </View>
+    <GameOverScreen
+      game="breakout"
+      score={score}
+      onPlayAgain={resetGame}
+    />
   ) : null;
 
   const winOverlay = won ? (
-    <View style={styles.overlay}>
-      <View style={styles.overlayContent}>
-        <View style={styles.textContainer}>
-          <ThemedText style={[styles.overlayTitle, styles.winTitle]}>YOU</ThemedText>
-          <ThemedText style={[styles.overlayTitle, styles.winTitle]}>WIN!</ThemedText>
-        </View>
-        <ThemedText style={[styles.overlayScore, styles.winScore]}>{score}</ThemedText>
-        <TouchableOpacity style={[styles.overlayButton, styles.winButton]} onPress={resetGame}>
-          <ThemedText style={styles.overlayButtonText}>PLAY AGAIN</ThemedText>
-        </TouchableOpacity>
-      </View>
-    </View>
+    <GameOverScreen
+      game="breakout"
+      score={score}
+      isWin={true}
+      onPlayAgain={resetGame}
+    />
   ) : null;
 
   const startOverlay = !gameOver && !won && lives === 3 && score === 0 ? (
@@ -130,6 +133,8 @@ export default function BreakoutScreen() {
 
   return (
     <GameLayout
+      title="BREAKOUT"
+      accentColor="#FF4757"
       score={score}
       showScore={true}
       overlay={gameOverOverlay || winOverlay}
@@ -174,7 +179,7 @@ export default function BreakoutScreen() {
 const styles = StyleSheet.create({
   gameContainer: {
     borderWidth: 2,
-    borderColor: '#00D4FF',
+    borderColor: '#FF4757',
     overflow: 'hidden',
     backgroundColor: '#0a0a1a',
     position: 'relative',
@@ -201,7 +206,7 @@ const styles = StyleSheet.create({
     fontWeight: '900',
     color: '#fff',
     letterSpacing: 3,
-    textShadowColor: '#00D4FF',
+    textShadowColor: '#FF4757',
     textShadowOffset: { width: 0, height: 0 },
     textShadowRadius: 10,
   },
@@ -211,80 +216,5 @@ const styles = StyleSheet.create({
     color: '#888',
     marginTop: 10,
     letterSpacing: 1,
-  },
-  overlay: {
-    ...StyleSheet.absoluteFillObject,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: 'rgba(0, 0, 0, 0.96)',
-    zIndex: 1000,
-  },
-  overlayContent: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 16,
-    paddingHorizontal: 24,
-    paddingVertical: 40,
-    width: '85%',
-    maxWidth: 400,
-  },
-  textContainer: {
-    alignItems: 'center',
-    gap: 4,
-    marginBottom: 8,
-  },
-  overlayTitle: {
-    fontSize: 36,
-    fontWeight: '900',
-    color: '#fff',
-    letterSpacing: 3,
-    textAlign: 'center',
-    textShadowColor: '#FF4757',
-    textShadowOffset: { width: 0, height: 0 },
-    textShadowRadius: 12,
-    lineHeight: 42,
-  },
-  winTitle: {
-    textShadowColor: '#2ED573',
-  },
-  overlayScore: {
-    fontSize: 48,
-    fontWeight: '900',
-    color: '#FF4757',
-    textAlign: 'center',
-    textShadowColor: '#FF4757',
-    textShadowOffset: { width: 0, height: 0 },
-    textShadowRadius: 16,
-    lineHeight: 56,
-    marginVertical: 12,
-  },
-  winScore: {
-    color: '#2ED573',
-    textShadowColor: '#2ED573',
-  },
-  overlayButton: {
-    backgroundColor: '#FF4757',
-    paddingHorizontal: 44,
-    paddingVertical: 14,
-    borderRadius: 28,
-    marginTop: 12,
-    shadowColor: '#FF4757',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.6,
-    shadowRadius: 8,
-    elevation: 8,
-    minWidth: 180,
-    alignItems: 'center',
-  },
-  winButton: {
-    backgroundColor: '#2ED573',
-    shadowColor: '#2ED573',
-  },
-  overlayButtonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '700',
-    letterSpacing: 2.5,
-    textAlign: 'center',
   },
 });

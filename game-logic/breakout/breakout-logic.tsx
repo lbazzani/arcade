@@ -88,7 +88,9 @@ const BRICK_SYMBOLS: Record<BrickType, string> = {
 const BrickComponent = ({ brick, cellSize }: { brick: Brick; cellSize: number }) => {
   if (brick.hit) return null;
 
-  const symbol = BRICK_SYMBOLS[brick.type];
+  const brickWidth = brick.width * cellSize;
+  const brickHeight = brick.height * cellSize;
+  const borderRadius = cellSize * 0.12;
 
   return (
     <View
@@ -96,58 +98,109 @@ const BrickComponent = ({ brick, cellSize }: { brick: Brick; cellSize: number })
         position: 'absolute',
         left: brick.x * cellSize,
         top: brick.y * cellSize,
-        width: brick.width * cellSize,
-        height: brick.height * cellSize,
-        backgroundColor: brick.color,
-        borderRadius: cellSize * 0.06,
-        justifyContent: 'center',
-        alignItems: 'center',
-        borderWidth: brick.type !== 'normal' ? 1 : 0,
-        borderColor: '#fff',
+        width: brickWidth,
+        height: brickHeight,
+        borderRadius: borderRadius,
+        overflow: 'hidden',
       }}
     >
-      {symbol ? (
-        <View style={{ position: 'absolute' }}>
-          <View style={{
-            width: brick.width * cellSize * 0.6,
-            height: brick.height * cellSize * 0.6,
+      {/* Base color */}
+      <View
+        style={{
+          position: 'absolute',
+          width: '100%',
+          height: '100%',
+          backgroundColor: brick.color,
+        }}
+      />
+      {/* Top highlight */}
+      <View
+        style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          height: '40%',
+          backgroundColor: 'rgba(255,255,255,0.25)',
+          borderTopLeftRadius: borderRadius,
+          borderTopRightRadius: borderRadius,
+        }}
+      />
+      {/* Bottom shadow */}
+      <View
+        style={{
+          position: 'absolute',
+          bottom: 0,
+          left: 0,
+          right: 0,
+          height: '30%',
+          backgroundColor: 'rgba(0,0,0,0.2)',
+          borderBottomLeftRadius: borderRadius,
+          borderBottomRightRadius: borderRadius,
+        }}
+      />
+      {/* Special brick indicator */}
+      {brick.type !== 'normal' && (
+        <View
+          style={{
+            position: 'absolute',
+            width: '100%',
+            height: '100%',
             justifyContent: 'center',
             alignItems: 'center',
-          }}>
-            {/* Simbolo semplice con View */}
-            {brick.type === 'multi_ball' && (
+          }}
+        >
+          {brick.type === 'multi_ball' && (
+            <View style={{ flexDirection: 'row', gap: 2 }}>
               <View style={{
-                width: cellSize * 0.2,
-                height: cellSize * 0.2,
+                width: cellSize * 0.12,
+                height: cellSize * 0.12,
                 backgroundColor: '#fff',
-                borderRadius: cellSize * 0.1,
+                borderRadius: cellSize * 0.06,
               }} />
-            )}
-            {brick.type === 'explosive' && (
               <View style={{
-                width: cellSize * 0.15,
-                height: cellSize * 0.15,
+                width: cellSize * 0.12,
+                height: cellSize * 0.12,
                 backgroundColor: '#fff',
-                transform: [{ rotate: '45deg' }],
+                borderRadius: cellSize * 0.06,
               }} />
-            )}
-            {brick.type === 'speed_up' && (
-              <View style={{ flexDirection: 'row' }}>
-                <View style={{
-                  width: 0,
-                  height: 0,
-                  borderLeftWidth: cellSize * 0.1,
-                  borderLeftColor: '#fff',
-                  borderTopWidth: cellSize * 0.08,
-                  borderTopColor: 'transparent',
-                  borderBottomWidth: cellSize * 0.08,
-                  borderBottomColor: 'transparent',
-                }} />
-              </View>
-            )}
-          </View>
+            </View>
+          )}
+          {brick.type === 'explosive' && (
+            <View style={{
+              width: cellSize * 0.2,
+              height: cellSize * 0.2,
+              backgroundColor: '#fff',
+              borderRadius: cellSize * 0.03,
+              transform: [{ rotate: '45deg' }],
+            }} />
+          )}
+          {brick.type === 'speed_up' && (
+            <View style={{ flexDirection: 'row', gap: 1 }}>
+              <View style={{
+                width: 0,
+                height: 0,
+                borderLeftWidth: cellSize * 0.08,
+                borderLeftColor: '#fff',
+                borderTopWidth: cellSize * 0.06,
+                borderTopColor: 'transparent',
+                borderBottomWidth: cellSize * 0.06,
+                borderBottomColor: 'transparent',
+              }} />
+              <View style={{
+                width: 0,
+                height: 0,
+                borderLeftWidth: cellSize * 0.08,
+                borderLeftColor: '#fff',
+                borderTopWidth: cellSize * 0.06,
+                borderTopColor: 'transparent',
+                borderBottomWidth: cellSize * 0.06,
+                borderBottomColor: 'transparent',
+              }} />
+            </View>
+          )}
         </View>
-      ) : null}
+      )}
     </View>
   );
 };
@@ -155,6 +208,9 @@ const BrickComponent = ({ brick, cellSize }: { brick: Brick; cellSize: number })
 // Componente paddle
 const Paddle = ({ x, cellSize, speedMode }: { x: number; cellSize: number; speedMode: string }) => {
   const paddleColor = speedMode === 'fast' ? '#FF6B35' : '#00D4FF';
+  const paddleWidth = PADDLE_WIDTH * cellSize;
+  const paddleHeight = PADDLE_HEIGHT * cellSize;
+  const borderRadius = paddleHeight / 2;
 
   return (
     <View
@@ -162,12 +218,59 @@ const Paddle = ({ x, cellSize, speedMode }: { x: number; cellSize: number; speed
         position: 'absolute',
         left: x * cellSize,
         bottom: cellSize * 1,
-        width: PADDLE_WIDTH * cellSize,
-        height: PADDLE_HEIGHT * cellSize,
-        backgroundColor: paddleColor,
-        borderRadius: (PADDLE_HEIGHT * cellSize) / 2,
+        width: paddleWidth,
+        height: paddleHeight,
+        borderRadius: borderRadius,
+        overflow: 'hidden',
       }}
-    />
+    >
+      {/* Base color */}
+      <View
+        style={{
+          position: 'absolute',
+          width: '100%',
+          height: '100%',
+          backgroundColor: paddleColor,
+        }}
+      />
+      {/* Top highlight - glossy effect */}
+      <View
+        style={{
+          position: 'absolute',
+          top: 0,
+          left: '5%',
+          right: '5%',
+          height: '45%',
+          backgroundColor: 'rgba(255,255,255,0.4)',
+          borderRadius: borderRadius,
+        }}
+      />
+      {/* Center line */}
+      <View
+        style={{
+          position: 'absolute',
+          top: '40%',
+          left: '45%',
+          width: '10%',
+          height: '20%',
+          backgroundColor: 'rgba(255,255,255,0.6)',
+          borderRadius: 2,
+        }}
+      />
+      {/* Bottom shadow */}
+      <View
+        style={{
+          position: 'absolute',
+          bottom: 0,
+          left: 0,
+          right: 0,
+          height: '30%',
+          backgroundColor: 'rgba(0,0,0,0.25)',
+          borderBottomLeftRadius: borderRadius,
+          borderBottomRightRadius: borderRadius,
+        }}
+      />
+    </View>
   );
 };
 
@@ -184,10 +287,33 @@ const BallComponent = ({ ball, cellSize, speedMode }: { ball: Ball; cellSize: nu
         top: ball.y * cellSize - ballSize / 2,
         width: ballSize,
         height: ballSize,
-        backgroundColor: ballColor,
         borderRadius: ballSize / 2,
+        overflow: 'hidden',
       }}
-    />
+    >
+      {/* Base */}
+      <View
+        style={{
+          position: 'absolute',
+          width: '100%',
+          height: '100%',
+          backgroundColor: ballColor,
+          borderRadius: ballSize / 2,
+        }}
+      />
+      {/* Highlight */}
+      <View
+        style={{
+          position: 'absolute',
+          top: '15%',
+          left: '15%',
+          width: '35%',
+          height: '35%',
+          backgroundColor: 'rgba(255,255,255,0.6)',
+          borderRadius: ballSize / 2,
+        }}
+      />
+    </View>
   );
 };
 
@@ -343,7 +469,7 @@ const generateBricks = (): Brick[] => {
   const initialRows = 5;
 
   for (let row = 0; row < initialRows; row++) {
-    const y = 1.5 + row * (BRICK_HEIGHT + BRICK_GAP);
+    const y = BRICK_GAP + row * (BRICK_HEIGHT + BRICK_GAP);
     const rowBricks = generateBrickRow(row, y);
     bricks.push(...rowBricks);
   }
@@ -513,7 +639,7 @@ export const GameLoop = (entities: any, { events, dispatch }: any) => {
       });
 
       // Aggiungi nuova riga in alto
-      const newRow = generateBrickRow(0, 1.5);
+      const newRow = generateBrickRow(0, BRICK_GAP);
       state.bricks = [...newRow, ...state.bricks];
 
       // Controlla se i brick hanno raggiunto il paddle (game over)
@@ -545,15 +671,18 @@ export const GameLoop = (entities: any, { events, dispatch }: any) => {
       if (ball.x - BALL_SIZE / 2 < 0) {
         ball.x = BALL_SIZE / 2;
         ball.vx = Math.abs(ball.vx);
+        dispatch({ type: 'wall-hit' });
       } else if (ball.x + BALL_SIZE / 2 > GAME_WIDTH) {
         ball.x = GAME_WIDTH - BALL_SIZE / 2;
         ball.vx = -Math.abs(ball.vx);
+        dispatch({ type: 'wall-hit' });
       }
 
       // Collisione soffitto
       if (ball.y - BALL_SIZE / 2 < 0) {
         ball.y = BALL_SIZE / 2;
         ball.vy = Math.abs(ball.vy);
+        dispatch({ type: 'wall-hit' });
       }
 
       // Collisione paddle
@@ -571,6 +700,7 @@ export const GameLoop = (entities: any, { events, dispatch }: any) => {
         ball.y = paddleTop - ballRadius;
         const hitPos = (ball.x - state.paddleX) / PADDLE_WIDTH;
         ball.vx = (hitPos - 0.5) * ball.speed * 2;
+        dispatch({ type: 'paddle-hit' });
       }
 
       // Collisione mattoni
@@ -615,8 +745,12 @@ export const GameLoop = (entities: any, { events, dispatch }: any) => {
 
           state.score = (state.score || 0) + points;
           dispatch({ type: 'score-update', score: state.score });
+          dispatch({ type: 'brick-hit' });
 
           // Applica effetto speciale
+          if (brick.type !== 'normal') {
+            dispatch({ type: 'powerup-collected' });
+          }
           applyBrickEffect(state, brick, ballIdx, dispatch);
 
           // Controlla vittoria

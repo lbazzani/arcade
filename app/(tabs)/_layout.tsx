@@ -29,6 +29,27 @@ export default function TabLayout() {
           tabBarIcon: ({ color }) => <IconSymbol size={28} name="gamecontroller.fill" color={color} />,
         }}
       />
+      <Tabs.Screen
+        name="wordplay"
+        options={{
+          title: 'Wordplay',
+          tabBarIcon: ({ color }) => <IconSymbol size={28} name="textformat.abc" color={color} />,
+        }}
+      />
+      <Tabs.Screen
+        name="numberplay"
+        options={{
+          title: 'Numberplay',
+          tabBarIcon: ({ color }) => <IconSymbol size={28} name="number.square.fill" color={color} />,
+        }}
+      />
+      <Tabs.Screen
+        name="leaderboard"
+        options={{
+          title: 'Leaderboard',
+          tabBarIcon: ({ color }) => <IconSymbol size={28} name="trophy.fill" color={color} />,
+        }}
+      />
     </Tabs>
   );
 }

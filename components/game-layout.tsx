@@ -1,43 +1,54 @@
 import React, { ReactNode } from 'react';
-import { StyleSheet, View, TouchableOpacity, StatusBar, Platform } from 'react-native';
-import { useRouter } from 'expo-router';
-import { ThemedText } from '@/components/themed-text';
+import { StyleSheet, View, StatusBar } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { GameHeader } from '@/components/game-header';
+import { ScoreBar } from '@/components/score-bar';
 
 interface GameLayoutProps {
   children: ReactNode;
+  title: string;
   score?: number;
   showScore?: boolean;
+  accentColor?: string;
   controls?: ReactNode;
   overlay?: ReactNode;
+  scoreItems?: Array<{ label: string; value: string | number; color?: string }>;
 }
 
-export function GameLayout({ children, score = 0, showScore = true, controls, overlay }: GameLayoutProps) {
-  const router = useRouter();
+export function GameLayout({
+  children,
+  title,
+  score = 0,
+  showScore = true,
+  accentColor = '#4A90E2',
+  controls,
+  overlay,
+  scoreItems,
+}: GameLayoutProps) {
   const insets = useSafeAreaInsets();
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top }]}>
+    <View style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor="#000" />
 
-      {/* HEADER: Back button con safe area */}
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-          <ThemedText style={styles.backButtonText}>✕</ThemedText>
-        </TouchableOpacity>
-      </View>
+      {/* HEADER */}
+      <GameHeader
+        title={title}
+        accentColor={accentColor}
+      />
+
+      {/* SCORE */}
+      {showScore && (
+        <ScoreBar
+          accentColor={accentColor}
+          items={scoreItems || [{ label: 'SCORE', value: score }]}
+        />
+      )}
 
       {/* GIOCO: Area centrale */}
       <View style={styles.gameWrapper}>
         {children}
       </View>
-
-      {/* SCORE */}
-      {showScore && (
-        <View style={styles.scoreContainer}>
-          <ThemedText style={styles.scoreText}>SCORE: {score}</ThemedText>
-        </View>
-      )}
 
       {/* CONTROLLI */}
       {controls && (
@@ -55,51 +66,15 @@ export function GameLayout({ children, score = 0, showScore = true, controls, ov
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#000',
-  },
-  header: {
-    height: 60,
-    width: '100%',
-    justifyContent: 'center',
-    paddingHorizontal: 16,
-    backgroundColor: '#000',
-  },
-  backButton: {
-    width: 44,
-    height: 44,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: 'rgba(26, 26, 26, 0.95)',
-    borderRadius: 22,
-    borderWidth: 2,
-    borderColor: '#4A90E2',
-  },
-  backButtonText: {
-    fontSize: 20,
-    color: '#4A90E2',
-    fontWeight: 'bold',
+    backgroundColor: '#0a0a1a',
   },
   gameWrapper: {
     flex: 1,
-    justifyContent: 'center',
+    justifyContent: 'flex-start',
     alignItems: 'center',
-    backgroundColor: '#000',
-  },
-  scoreContainer: {
-    height: 35,
-    width: '100%',
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#000',
-  },
-  scoreText: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#4A90E2',
-    letterSpacing: 2,
+    paddingTop: 12,
   },
   controlsWrapper: {
     width: '100%',
-    backgroundColor: '#000',
   },
 });

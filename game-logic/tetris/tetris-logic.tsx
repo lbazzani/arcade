@@ -248,11 +248,13 @@ export const GameLoop = (entities: any, { events, dispatch }: any) => {
         newPiece.position.x--;
         if (canPlacePiece(state.board, newPiece)) {
           state.currentPiece = newPiece;
+          dispatch({ type: 'piece-moved' });
         }
       } else if (event.type === 'move-right') {
         newPiece.position.x++;
         if (canPlacePiece(state.board, newPiece)) {
           state.currentPiece = newPiece;
+          dispatch({ type: 'piece-moved' });
         }
       } else if (event.type === 'move-down') {
         newPiece.position.y++;
@@ -264,6 +266,7 @@ export const GameLoop = (entities: any, { events, dispatch }: any) => {
         newPiece.rotation = (newPiece.rotation + 1) % maxRotation;
         if (canPlacePiece(state.board, newPiece)) {
           state.currentPiece = newPiece;
+          dispatch({ type: 'piece-rotated' });
         }
       }
     });
@@ -282,6 +285,7 @@ export const GameLoop = (entities: any, { events, dispatch }: any) => {
     } else {
       // Fissa il pezzo
       state.board = lockPiece(state.board, state.currentPiece);
+      dispatch({ type: 'piece-locked' });
 
       // Pulisci le righe
       const { newBoard, linesCleared } = clearLines(state.board);
@@ -292,6 +296,7 @@ export const GameLoop = (entities: any, { events, dispatch }: any) => {
         const linePoints = [0, 40, 100, 300, 1200];
         state.score += linePoints[Math.min(linesCleared, 4)];
         dispatch({ type: 'score-update', score: state.score });
+        dispatch({ type: 'lines-cleared', lines: linesCleared });
       }
 
       // Nuovo pezzo
