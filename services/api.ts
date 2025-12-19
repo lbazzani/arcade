@@ -28,7 +28,7 @@ export interface SubmitScoreResponse {
 // Server URLs to try (in order of priority)
 const SERVER_URLS = [
   'https://arcade.bazzani.info',
-  'http://localhost:3000',
+  'http://localhost:3010',
 ];
 
 let activeServerUrl: string | null = null;

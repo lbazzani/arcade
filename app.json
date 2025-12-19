@@ -37,7 +37,16 @@
     },
     "web": {
       "output": "static",
-      "favicon": "./assets/images/favicon.png"
+      "favicon": "./assets/images/favicon.png",
+      "bundler": "metro",
+      "name": "Bazzani Arcade",
+      "shortName": "Arcade",
+      "description": "Raccolta di giochi arcade",
+      "backgroundColor": "#000000",
+      "themeColor": "#000000",
+      "display": "standalone",
+      "orientation": "portrait",
+      "startUrl": "/"
     },
     "plugins": [
       "expo-router",
