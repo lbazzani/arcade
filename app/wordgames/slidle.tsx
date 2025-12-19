@@ -3,7 +3,8 @@ import {
   View,
   StyleSheet,
   TouchableOpacity,
-  Dimensions,
+  useWindowDimensions,
+  Platform,
 } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { ThemedText } from '@/components/themed-text';
@@ -21,22 +22,29 @@ import {
   getTimeForRound,
 } from '@/game-logic/slidle/slidle-logic';
 
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const TILE_GAP = 6;
-// Calculate tile size based on available screen width
-const AVAILABLE_WIDTH = Math.min(SCREEN_WIDTH - 40, 340);
-const TILE_SIZE = Math.floor((AVAILABLE_WIDTH - TILE_GAP * (GRID_SIZE - 1)) / GRID_SIZE);
+
+function getTileSize(screenWidth: number) {
+  const availableWidth = Math.min(screenWidth - 40, 340);
+  return Math.floor((availableWidth - TILE_GAP * (GRID_SIZE - 1)) / GRID_SIZE);
+}
 
 const ACCENT_COLOR = '#FF6B9D'; // Pink/magenta for word games
 const SUCCESS_COLOR = '#2ED573';
 const BG_DARK = '#0a0a1a';
+const BONUS_POINTS = 10; // Bonus for completing 4 rows before timer ends
 
 export default function SlidleScreen() {
+  const { width } = useWindowDimensions();
+  const screenWidth = Platform.OS === 'web' && width > 500 ? 390 : width;
+  const TILE_SIZE = getTileSize(screenWidth);
+
   const [gameState, setGameState] = useState<GameState | null>(null);
   const [timeLeft, setTimeLeft] = useState<number>(0);
   const [isGameOver, setIsGameOver] = useState(false);
   const [isTimerRunning, setIsTimerRunning] = useState(false);
   const [showHelp, setShowHelp] = useState(true);
+  const [showBonus, setShowBonus] = useState(false);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Load game on mount (but don't start until help is dismissed)
@@ -80,14 +88,7 @@ export default function SlidleScreen() {
     if (wordsFound > 0) {
       // Continue to next round
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-
-      const newRound = gameState.round + 1;
-      const newState = generatePuzzle();
-      newState.round = newRound;
-      newState.totalGameScore = gameState.totalGameScore + gameState.totalScore;
-
-      setGameState(newState);
-      setTimeLeft(getTimeForRound(newRound));
+      advanceToNextRound(gameState, 0); // No bonus when timer runs out
     } else {
       // Game over
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
@@ -96,10 +97,37 @@ export default function SlidleScreen() {
     }
   };
 
+  // Advance to next round with optional bonus
+  const advanceToNextRound = useCallback((currentState: GameState, bonus: number) => {
+    const newRound = currentState.round + 1;
+    const newState = generatePuzzle();
+    newState.round = newRound;
+    newState.totalGameScore = currentState.totalGameScore + currentState.totalScore + bonus;
+
+    setGameState(newState);
+    setTimeLeft(getTimeForRound(newRound));
+    setIsTimerRunning(true);
+  }, []);
+
+  // Check if 4 rows are completed and trigger bonus
+  const checkFourRowsBonus = useCallback((state: GameState) => {
+    if (state.lockedRows.length === 4 && timeLeft > 0) {
+      // 4 rows completed before timer ends - give bonus!
+      setShowBonus(true);
+      setIsTimerRunning(false);
+
+      // Show bonus animation then advance
+      setTimeout(() => {
+        setShowBonus(false);
+        advanceToNextRound(state, BONUS_POINTS);
+      }, 1500);
+    }
+  }, [timeLeft, advanceToNextRound]);
+
 
   // Handle tile tap
   const handleTileTap = useCallback((pos: Position) => {
-    if (!gameState || isGameOver) return;
+    if (!gameState || isGameOver || showBonus) return;
 
     if (!isAdjacent(pos, gameState.emptyPos)) {
       // Shake feedback for invalid move
@@ -115,15 +143,18 @@ export default function SlidleScreen() {
       setGameState(newState);
 
       // Check for word completion
-      const oldResult = gameState.rowResults.find(r => r.row === pos.row);
-      const newResult = newState.rowResults.find(r => r.row === pos.row);
+      const oldLockedCount = gameState.lockedRows.length;
+      const newLockedCount = newState.lockedRows.length;
 
-      if (newResult?.isValid && !oldResult?.isValid) {
-        // Word found!
+      if (newLockedCount > oldLockedCount) {
+        // New word locked!
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+
+        // Check for 4-row bonus
+        checkFourRowsBonus(newState);
       }
     }
-  }, [gameState, isGameOver]);
+  }, [gameState, isGameOver, showBonus, checkFourRowsBonus]);
 
   // Format time as MM:SS
   const formatTime = (seconds: number): string => {
@@ -353,18 +384,56 @@ export default function SlidleScreen() {
       {/* Found Words or Instructions */}
       {renderFoundWords()}
 
-      {/* Instructions */}
+      {/* Instructions or Skip Button */}
       <View style={styles.instructionsContainer}>
-        <ThemedText style={styles.instructionsText}>
-          Tap tiles next to the empty space to slide them.
-        </ThemedText>
-        <ThemedText style={styles.instructionsText}>
-          Form valid words on each row (can have extra letters).
-        </ThemedText>
-        <ThemedText style={styles.instructionsText}>
-          5-letter word = 3 pts | 4-letter word = 2 pts
-        </ThemedText>
+        {(() => {
+          // Show skip button if at least 1 word found but less than 4 locked
+          const validWordsCount = gameState?.rowResults.filter(r => r.isValid).length || 0;
+          const canSkip = gameState && validWordsCount > 0 && gameState.lockedRows.length < 4 && !showBonus;
+
+          if (canSkip) {
+            return (
+              <TouchableOpacity
+                style={styles.skipButton}
+                onPress={() => {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                  advanceToNextRound(gameState, 0);
+                }}
+              >
+                <ThemedText style={styles.skipButtonText}>
+                  Stuck? Skip to next puzzle →
+                </ThemedText>
+              </TouchableOpacity>
+            );
+          }
+
+          return (
+            <>
+              <ThemedText style={styles.instructionsText}>
+                Tap tiles next to the empty space to slide them.
+              </ThemedText>
+              <ThemedText style={styles.instructionsText}>
+                Form valid words on each row (can have extra letters).
+              </ThemedText>
+              <ThemedText style={styles.instructionsText}>
+                5-letter word = 3 pts | 4-letter word = 2 pts
+              </ThemedText>
+            </>
+          );
+        })()}
       </View>
+
+      {/* Bonus Overlay */}
+      {showBonus && (
+        <View style={styles.bonusOverlay}>
+          <View style={styles.bonusContent}>
+            <ThemedText style={styles.bonusEmoji}>🎉</ThemedText>
+            <ThemedText style={styles.bonusTitle}>BONUS!</ThemedText>
+            <ThemedText style={styles.bonusText}>+{BONUS_POINTS} POINTS</ThemedText>
+            <ThemedText style={styles.bonusSubtext}>4 rows completed!</ThemedText>
+          </View>
+        </View>
+      )}
 
       {/* Game Over Screen */}
       {isGameOver && (
@@ -528,6 +597,20 @@ const styles = StyleSheet.create({
     fontSize: 12,
     textAlign: 'center',
   },
+  skipButton: {
+    backgroundColor: ACCENT_COLOR + '22',
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderRadius: 25,
+    borderWidth: 1,
+    borderColor: ACCENT_COLOR + '44',
+  },
+  skipButtonText: {
+    color: ACCENT_COLOR,
+    fontSize: 14,
+    fontWeight: '600',
+    textAlign: 'center',
+  },
   // Help screen styles
   helpOverlay: {
     ...StyleSheet.absoluteFillObject,
@@ -652,5 +735,38 @@ const styles = StyleSheet.create({
     color: ACCENT_COLOR,
     fontSize: 18,
     fontWeight: '900',
+  },
+  // Bonus overlay styles
+  bonusOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0, 0, 0, 0.85)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 999,
+  },
+  bonusContent: {
+    alignItems: 'center',
+    padding: 30,
+  },
+  bonusEmoji: {
+    fontSize: 60,
+    marginBottom: 10,
+  },
+  bonusTitle: {
+    fontSize: 36,
+    fontWeight: '900',
+    color: SUCCESS_COLOR,
+    letterSpacing: 4,
+  },
+  bonusText: {
+    fontSize: 28,
+    fontWeight: '800',
+    color: '#FFD700',
+    marginTop: 10,
+  },
+  bonusSubtext: {
+    fontSize: 16,
+    color: '#888',
+    marginTop: 8,
   },
 });

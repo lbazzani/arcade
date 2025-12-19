@@ -1,24 +1,16 @@
 import { GameListPage, GameItem } from '@/components/game-list-page';
+import { getWordGames } from '@/config/games';
 
-const wordGames: GameItem[] = [
-  {
-    id: '1',
-    name: 'Slidle',
-    description: 'Slide tiles to form words',
-    route: '/wordgames/slidle',
-    icon: '🔤',
-    color: '#FF6B9D',
-    badge: 'DAILY',
-  },
-  {
-    id: '2',
-    name: 'Fives',
-    description: 'Guess the 5-letter word in 6 attempts',
-    route: '/wordgames/fives',
-    icon: '5️⃣',
-    color: '#E85D75',
-  },
-];
+// Get word games from centralized config and convert to GameItem format
+const games: GameItem[] = getWordGames().map((game, index) => ({
+  id: String(index + 1),
+  name: game.name,
+  description: game.description,
+  route: game.route,
+  icon: game.icon,
+  color: game.color,
+  badge: game.badge,
+}));
 
 export default function WordplayScreen() {
   return (
@@ -27,7 +19,7 @@ export default function WordplayScreen() {
       subtitle="PUZZLE GAMES"
       logoLetter="W"
       accentColor="#FF6B9D"
-      games={wordGames}
+      games={games}
       comingSoonText="More word games coming soon!"
       comingSoonIcon="🎯"
     />

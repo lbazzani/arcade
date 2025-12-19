@@ -19,20 +19,12 @@ import {
   getLeaderboard,
   getTotalLeaderboard,
 } from '@/services/api';
+import { LEADERBOARD_TABS, GAMES, createEmptyScores } from '@/config/games';
 
 type TabType = GameName | 'total';
 
-const TABS: { key: TabType; label: string; color: string }[] = [
-  { key: 'total', label: 'TOTAL', color: '#FFD700' },
-  { key: 'tetris', label: 'TETRIS', color: '#4A90E2' },
-  { key: 'snake', label: 'SNAKE', color: '#4CAF50' },
-  { key: 'flappy', label: 'FLAPPY', color: '#FFD93D' },
-  { key: 'galaxy', label: 'GALAXY', color: '#00D4FF' },
-  { key: 'breakout', label: 'BREAKOUT', color: '#FF4757' },
-  { key: 'slidle', label: 'SLIDLE', color: '#FF6B9D' },
-  { key: 'fives', label: 'FIVES', color: '#E85D75' },
-  { key: 'sudoku', label: 'SUDOKU', color: '#9B59B6' },
-];
+// Use centralized tabs configuration
+const TABS = LEADERBOARD_TABS as { key: TabType; label: string; color: string }[];
 
 const ROW_HEIGHT = 52; // Height of each score row including margin
 
@@ -44,16 +36,10 @@ export default function LeaderboardScreen() {
 
   // Extra top padding to ensure title is never clipped
   const TOP_SAFE_PADDING = Math.max(insets.top, 44) + 10;
-  const [gameScores, setGameScores] = useState<Record<GameName, ScoreEntry[]>>({
-    tetris: [],
-    snake: [],
-    flappy: [],
-    galaxy: [],
-    breakout: [],
-    slidle: [],
-    fives: [],
-    sudoku: [],
-  });
+  // Use centralized empty scores - automatically includes all games
+  const [gameScores, setGameScores] = useState<Record<string, ScoreEntry[]>>(
+    createEmptyScores<ScoreEntry>()
+  );
   const [totalScores, setTotalScores] = useState<TotalScoreEntry[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -72,20 +58,18 @@ export default function LeaderboardScreen() {
     if (!isServerReady) return;
 
     try {
-      const [tetris, snake, flappy, galaxy, breakout, slidle, fives, sudoku, total] = await Promise.all([
-        getLeaderboard('tetris'),
-        getLeaderboard('snake'),
-        getLeaderboard('flappy'),
-        getLeaderboard('galaxy'),
-        getLeaderboard('breakout'),
-        getLeaderboard('slidle'),
-        getLeaderboard('fives'),
-        getLeaderboard('sudoku'),
-        getTotalLeaderboard(),
-      ]);
+      // Dynamically load all games from centralized config
+      const gamePromises = GAMES.map(game => getLeaderboard(game.id as GameName));
+      const results = await Promise.all([...gamePromises, getTotalLeaderboard()]);
 
-      setGameScores({ tetris, snake, flappy, galaxy, breakout, slidle, fives, sudoku });
-      setTotalScores(total);
+      // Build scores object dynamically
+      const newScores: Record<string, ScoreEntry[]> = {};
+      GAMES.forEach((game, index) => {
+        newScores[game.id] = results[index] as ScoreEntry[];
+      });
+
+      setGameScores(newScores);
+      setTotalScores(results[results.length - 1] as TotalScoreEntry[]);
     } catch (error) {
       console.error('Error loading leaderboards:', error);
     } finally {

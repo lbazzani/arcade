@@ -1,6 +1,11 @@
 // API service for Bazzani Arcade leaderboard
+import { GAMES, type GameName as GameNameType } from '@/config/games';
 
-export type GameName = 'tetris' | 'snake' | 'flappy' | 'galaxy' | 'breakout' | 'slidle' | 'fives' | 'sudoku';
+// Re-export GameName from centralized config
+export type GameName = GameNameType;
+
+// All game IDs derived from config (used for API calls)
+export const ALL_GAME_IDS = GAMES.map(game => game.id);
 
 export interface ScoreEntry {
   name: string;
@@ -11,7 +16,7 @@ export interface ScoreEntry {
 export interface TotalScoreEntry {
   name: string;
   totalScore: number;
-  games: Record<GameName, number>;
+  games: Record<string, number>;
 }
 
 export interface SubmitScoreResponse {
@@ -131,4 +136,29 @@ export const submitScore = async (
 // Check if server is connected
 export const isServerConnected = (): boolean => {
   return activeServerUrl !== null;
+};
+
+// Register push token with the server
+export const registerPushToken = async (token: string): Promise<boolean> => {
+  if (!activeServerUrl) {
+    console.warn('No server connected');
+    return false;
+  }
+
+  try {
+    const response = await fetch(`${activeServerUrl}/api/push-token`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ token }),
+    });
+
+    if (response.ok) {
+      console.log('Push token registered successfully');
+      return true;
+    }
+  } catch (error) {
+    console.error('Error registering push token:', error);
+  }
+
+  return false;
 };

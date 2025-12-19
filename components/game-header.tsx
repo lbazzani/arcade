@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, StyleSheet, TouchableOpacity, Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { ThemedText } from '@/components/themed-text';
@@ -28,7 +28,8 @@ export const GameHeader: React.FC<GameHeaderProps> = ({
   const router = useRouter();
 
   // Ensure minimum top padding for title visibility
-  const TOP_SAFE_PADDING = Math.max(insets.top, 44) + 10;
+  // Su web non serve il safe area padding
+  const TOP_SAFE_PADDING = Platform.OS === 'web' ? 12 : Math.max(insets.top, 44) + 10;
 
   return (
     <View style={[styles.container, { paddingTop: TOP_SAFE_PADDING }]}>

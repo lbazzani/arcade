@@ -12,29 +12,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ThemedText } from '@/components/themed-text';
 import { useApp } from '@/contexts/app-context';
 import { GameName, ScoreEntry, submitScore, getLeaderboard } from '@/services/api';
-
-// Game colors for theming
-const GAME_COLORS: Record<GameName, string> = {
-  tetris: '#4A90E2',
-  snake: '#4CAF50',
-  flappy: '#FFD93D',
-  galaxy: '#00D4FF',
-  breakout: '#FF4757',
-  slidle: '#FF6B9D',
-  fives: '#E85D75',
-  sudoku: '#9B59B6',
-};
-
-const GAME_NAMES: Record<GameName, string> = {
-  tetris: 'TETRIS',
-  snake: 'SNAKE',
-  flappy: 'FLAPPY BIRD',
-  galaxy: 'GALAXY SHOOTER',
-  breakout: 'BREAKOUT',
-  slidle: 'SLIDLE',
-  fives: 'FIVES',
-  sudoku: 'SUDOKU',
-};
+import { GAME_COLORS, GAME_NAMES } from '@/config/games';
 
 interface GameOverScreenProps {
   game: GameName;
@@ -325,7 +303,8 @@ const styles = StyleSheet.create({
     flexGrow: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    paddingVertical: 20,
+    paddingTop: 30,
+    paddingBottom: 20,
     paddingHorizontal: 16,
   },
   content: {
@@ -343,6 +322,9 @@ const styles = StyleSheet.create({
     textShadowRadius: 16,
     textAlign: 'center',
     marginBottom: 12,
+    marginTop: 10,
+    lineHeight: 36,
+    includeFontPadding: false,
   },
   // Score Card
   scoreCard: {

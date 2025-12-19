@@ -1,8 +1,22 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, useRef, ReactNode } from 'react';
+import { Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { initializeServer, getServerUrl, setServerUrl } from '@/services/api';
+import * as Notifications from 'expo-notifications';
+import * as Device from 'expo-device';
+import Constants from 'expo-constants';
+import { useRouter } from 'expo-router';
+import { initializeServer, registerPushToken } from '@/services/api';
 
 const PLAYER_NAME_KEY = '@bazzani_arcade_player_name';
+
+// Configura come mostrare le notifiche quando l'app è in foreground
+Notifications.setNotificationHandler({
+  handleNotification: async () => ({
+    shouldShowAlert: true,
+    shouldPlaySound: true,
+    shouldSetBadge: false,
+  }),
+});
 
 interface AppContextType {
   playerName: string | null;
@@ -11,6 +25,7 @@ interface AppContextType {
   serverUrl: string | null;
   isServerReady: boolean;
   isLoading: boolean;
+  expoPushToken: string | null;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -20,6 +35,9 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const [serverUrl, setServerUrlState] = useState<string | null>(null);
   const [isServerReady, setIsServerReady] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [expoPushToken, setExpoPushToken] = useState<string | null>(null);
+  const notificationListener = useRef<Notifications.Subscription>();
+  const responseListener = useRef<Notifications.Subscription>();
 
   // Initialize on mount
   useEffect(() => {
@@ -35,6 +53,16 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         const url = await initializeServer();
         setServerUrlState(url);
         setIsServerReady(url !== null);
+
+        // Register for push notifications
+        const token = await registerForPushNotificationsAsync();
+        if (token) {
+          setExpoPushToken(token);
+          // Invia il token al server
+          if (url) {
+            await registerPushToken(token);
+          }
+        }
       } catch (error) {
         console.error('Error initializing app:', error);
       } finally {
@@ -43,6 +71,16 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     };
 
     initialize();
+
+    // Cleanup notification listeners
+    return () => {
+      if (notificationListener.current) {
+        notificationListener.current.remove();
+      }
+      if (responseListener.current) {
+        responseListener.current.remove();
+      }
+    };
   }, []);
 
   // Set player name and persist
@@ -69,12 +107,64 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         serverUrl,
         isServerReady,
         isLoading,
+        expoPushToken,
       }}
     >
       {children}
     </AppContext.Provider>
   );
 };
+
+// Funzione per registrarsi alle push notifications
+async function registerForPushNotificationsAsync(): Promise<string | null> {
+  // Le push notifications funzionano solo su dispositivi fisici
+  if (!Device.isDevice) {
+    console.log('Le push notifications funzionano solo su dispositivi fisici');
+    return null;
+  }
+
+  // Controlla/richiedi permessi
+  const { status: existingStatus } = await Notifications.getPermissionsAsync();
+  let finalStatus = existingStatus;
+
+  if (existingStatus !== 'granted') {
+    const { status } = await Notifications.requestPermissionsAsync();
+    finalStatus = status;
+  }
+
+  if (finalStatus !== 'granted') {
+    console.log('Permesso per le notifiche non concesso');
+    return null;
+  }
+
+  // Ottieni il push token
+  try {
+    const projectId = Constants.expoConfig?.extra?.eas?.projectId;
+    if (!projectId) {
+      console.log('Project ID non trovato');
+      return null;
+    }
+
+    const tokenData = await Notifications.getExpoPushTokenAsync({
+      projectId,
+    });
+
+    // Configura canale per Android
+    if (Platform.OS === 'android') {
+      await Notifications.setNotificationChannelAsync('default', {
+        name: 'default',
+        importance: Notifications.AndroidImportance.MAX,
+        vibrationPattern: [0, 250, 250, 250],
+        lightColor: '#FF231F7C',
+      });
+    }
+
+    return tokenData.data;
+  } catch (error) {
+    console.error('Errore nel recupero del push token:', error);
+    return null;
+  }
+}
 
 export const useApp = (): AppContextType => {
   const context = useContext(AppContext);

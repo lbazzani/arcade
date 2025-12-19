@@ -11,9 +11,9 @@ import {
   GameLoop,
   GAME_WIDTH,
   GAME_HEIGHT,
-} from '@/game-logic/flappy/flappy-logic';
+} from '@/game-logic/superbaz/superbaz-logic';
 
-export default function FlappyScreen() {
+export default function SuperBazScreen() {
   const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT, insets } = useGameDimensions();
   const { playFeedback } = useGameSounds();
 
@@ -47,7 +47,7 @@ export default function FlappyScreen() {
 
     if (gameEngineRef.current) {
       gameEngineRef.current.dispatch({ type: 'jump' });
-      playFeedback('shoot');
+      playFeedback('jump');
     }
   };
 
@@ -57,7 +57,10 @@ export default function FlappyScreen() {
       playFeedback('gameOver');
     } else if (event.type === 'score-update') {
       setScore(event.score);
-      playFeedback('powerup');
+    } else if (event.type === 'coin-collected') {
+      playFeedback('coin');
+    } else if (event.type === 'enemy-killed') {
+      playFeedback('stomp');
     }
   };
 
@@ -71,7 +74,7 @@ export default function FlappyScreen() {
 
   const gameOverOverlay = gameOver ? (
     <GameOverScreen
-      game="flappy"
+      game="superbaz"
       score={score}
       onPlayAgain={resetGame}
     />
@@ -80,7 +83,7 @@ export default function FlappyScreen() {
   const controls = (
     <View style={styles.hintContainer}>
       <ThemedText style={styles.hintText}>
-        {gameStarted ? 'TAP TO FLAP' : 'TAP ANYWHERE TO START'}
+        {gameStarted ? 'TAP TO JUMP' : 'TAP ANYWHERE TO START'}
       </ThemedText>
     </View>
   );
@@ -89,15 +92,15 @@ export default function FlappyScreen() {
     <View style={styles.startOverlay} pointerEvents="none">
       <View style={styles.startTextContainer}>
         <ThemedText style={styles.startText}>TAP</ThemedText>
-        <ThemedText style={styles.startSubtext}>to fly</ThemedText>
+        <ThemedText style={styles.startSubtext}>to jump</ThemedText>
       </View>
     </View>
   ) : null;
 
   return (
     <GameLayout
-      title="BAZ BIRD"
-      accentColor="#FFD93D"
+      title="SUPER BAZ"
+      accentColor="#E74C3C"
       score={score}
       showScore={true}
       controls={controls}
@@ -131,7 +134,7 @@ export default function FlappyScreen() {
 const styles = StyleSheet.create({
   gameContainer: {
     borderWidth: 3,
-    borderColor: '#FFD93D',
+    borderColor: '#E74C3C',
     borderRadius: 12,
     backgroundColor: '#B3E5FC',
     shadowColor: '#000',
@@ -153,7 +156,7 @@ const styles = StyleSheet.create({
   hintText: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#FFD93D',
+    color: '#E74C3C',
     letterSpacing: 2,
     opacity: 0.8,
   },
@@ -173,13 +176,13 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
     borderRadius: 20,
     borderWidth: 3,
-    borderColor: '#FFD93D',
+    borderColor: '#E74C3C',
     overflow: 'visible',
   },
   startText: {
     fontSize: 52,
     fontWeight: '900',
-    color: '#FFD93D',
+    color: '#E74C3C',
     letterSpacing: 6,
     lineHeight: 60,
     includeFontPadding: false,

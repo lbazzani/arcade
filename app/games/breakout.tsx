@@ -1,11 +1,11 @@
 import React, { useState, useRef } from 'react';
-import { StyleSheet, View, Dimensions, PanResponder } from 'react-native';
+import { StyleSheet, View, PanResponder } from 'react-native';
 import { GameEngine } from 'react-native-game-engine';
 import { ThemedText } from '@/components/themed-text';
 import { GameLayout } from '@/components/game-layout';
 import { GameOverScreen } from '@/components/game-over-screen';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useGameSounds } from '@/hooks/use-game-sounds';
+import { useGameDimensions } from '@/hooks/use-game-dimensions';
 import {
   initializeGame,
   GameLoop,
@@ -14,8 +14,7 @@ import {
 } from '@/game-logic/breakout/breakout-logic';
 
 export default function BreakoutScreen() {
-  const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
-  const insets = useSafeAreaInsets();
+  const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT, insets } = useGameDimensions();
   const { playFeedback } = useGameSounds();
 
   const HEADER_HEIGHT = 60;

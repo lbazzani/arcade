@@ -3,7 +3,8 @@ import {
   View,
   StyleSheet,
   TouchableOpacity,
-  Dimensions,
+  useWindowDimensions,
+  Platform,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { ThemedText } from '@/components/themed-text';
@@ -31,13 +32,19 @@ import {
 
 const ACCENT_COLOR = '#9B59B6';
 const BG_DARK = '#0a0a1a';
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const GRID_PADDING = 16;
-const GRID_WIDTH = Math.min(SCREEN_WIDTH - GRID_PADDING * 2, 360);
-const CELL_SIZE = Math.floor(GRID_WIDTH / GRID_SIZE);
+
+function getCellSize(screenWidth: number) {
+  const gridWidth = Math.min(screenWidth - GRID_PADDING * 2, 360);
+  return Math.floor(gridWidth / GRID_SIZE);
+}
 
 export default function SudokuScreen() {
   const router = useRouter();
+  const { width } = useWindowDimensions();
+  const screenWidth = Platform.OS === 'web' && width > 500 ? 390 : width;
+  const CELL_SIZE = getCellSize(screenWidth);
+  const GRID_WIDTH = CELL_SIZE * GRID_SIZE;
   const [gameState, setGameState] = useState<GameState | null>(null);
   const [showHelp, setShowHelp] = useState(true);
   const [showRoundComplete, setShowRoundComplete] = useState(false);

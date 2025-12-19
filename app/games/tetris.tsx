@@ -1,11 +1,11 @@
 import React, { useState, useRef } from 'react';
-import { StyleSheet, View, TouchableOpacity, Dimensions, PanResponder, GestureResponderEvent } from 'react-native';
+import { StyleSheet, View, TouchableOpacity, PanResponder, GestureResponderEvent } from 'react-native';
 import { GameEngine } from 'react-native-game-engine';
 import { ThemedText } from '@/components/themed-text';
 import { GameLayout } from '@/components/game-layout';
 import { GameOverScreen } from '@/components/game-over-screen';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useGameSounds } from '@/hooks/use-game-sounds';
+import { useGameDimensions } from '@/hooks/use-game-dimensions';
 import {
   initializeGame,
   GameLoop,
@@ -14,8 +14,7 @@ import {
 } from '@/game-logic/tetris/tetris-logic';
 
 export default function TetrisScreen() {
-  const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
-  const insets = useSafeAreaInsets();
+  const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT, insets } = useGameDimensions();
   const { playFeedback } = useGameSounds();
 
   // Dimensioni componenti (considerando safe area)
@@ -171,7 +170,7 @@ export default function TetrisScreen() {
 
   return (
     <GameLayout
-      title="TETRIS"
+      title="BAZ BLOCKS"
       accentColor="#4A90E2"
       score={score}
       showScore={true}

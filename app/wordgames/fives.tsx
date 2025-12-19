@@ -3,7 +3,8 @@ import {
   View,
   StyleSheet,
   TouchableOpacity,
-  Dimensions,
+  useWindowDimensions,
+  Platform,
 } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { ThemedText } from '@/components/themed-text';
@@ -27,8 +28,6 @@ import {
   POINTS_PRESENT,
 } from '@/game-logic/fives/fives-logic';
 
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
-
 const ACCENT_COLOR = '#E85D75';
 const CORRECT_COLOR = '#6AAA64';
 const PRESENT_COLOR = '#C9B458';
@@ -37,11 +36,16 @@ const HINT_COLOR = '#9B59B6';
 const EMPTY_COLOR = '#1a1a2e';
 const BORDER_COLOR = '#3A3A3C';
 const BG_DARK = '#0a0a1a';
-
 const GRID_GAP = 6;
-const TILE_SIZE = Math.min((SCREEN_WIDTH - 60) / WORD_LENGTH - GRID_GAP, 54);
+
+function getTileSize(screenWidth: number) {
+  return Math.min((screenWidth - 60) / WORD_LENGTH - GRID_GAP, 54);
+}
 
 export default function FivesScreen() {
+  const { width } = useWindowDimensions();
+  const screenWidth = Platform.OS === 'web' && width > 500 ? 390 : width;
+  const TILE_SIZE = getTileSize(screenWidth);
   const [selectedLanguage, setSelectedLanguage] = useState<Language>('en');
   const [gameState, setGameState] = useState<GameState>(() => initializeGame('en'));
   const [shakeRow, setShakeRow] = useState<number | null>(null);

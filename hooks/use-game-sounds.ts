@@ -3,7 +3,7 @@ import { Audio } from 'expo-av';
 import * as Haptics from 'expo-haptics';
 
 // Tipi di feedback disponibili
-export type FeedbackType = 'shoot' | 'explosion' | 'hit' | 'enemyDestroyed' | 'gameOver' | 'powerup';
+export type FeedbackType = 'shoot' | 'explosion' | 'hit' | 'enemyDestroyed' | 'gameOver' | 'powerup' | 'jump' | 'coin' | 'stomp';
 
 // Mappa dei suoni - file generati in assets/sounds/
 const SOUND_FILES: Partial<Record<FeedbackType, any>> = {
@@ -13,6 +13,9 @@ const SOUND_FILES: Partial<Record<FeedbackType, any>> = {
   enemyDestroyed: require('@/assets/sounds/explosion.wav'), // Usa stesso suono di explosion
   gameOver: require('@/assets/sounds/gameOver.wav'),
   powerup: require('@/assets/sounds/powerup.wav'),
+  jump: require('@/assets/sounds/jump.wav'),
+  coin: require('@/assets/sounds/coin.wav'),
+  stomp: require('@/assets/sounds/stomp.wav'),
 };
 
 export function useGameSounds() {
@@ -115,6 +118,15 @@ export function useGameSounds() {
           break;
         case 'powerup':
           await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+          break;
+        case 'jump':
+          await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+          break;
+        case 'coin':
+          await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+          break;
+        case 'stomp':
+          await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
           break;
       }
     } catch {

@@ -1,5 +1,5 @@
 import React, { ReactNode } from 'react';
-import { StyleSheet, View, StatusBar } from 'react-native';
+import { StyleSheet, View, StatusBar, Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { GameHeader } from '@/components/game-header';
 import { ScoreBar } from '@/components/score-bar';
@@ -52,7 +52,7 @@ export function GameLayout({
 
       {/* CONTROLLI */}
       {controls && (
-        <View style={[styles.controlsWrapper, { paddingBottom: Math.max(insets.bottom, 10) }]}>
+        <View style={[styles.controlsWrapper, { paddingBottom: Platform.OS === 'web' ? 10 : Math.max(insets.bottom, 10) }]}>
           {controls}
         </View>
       )}

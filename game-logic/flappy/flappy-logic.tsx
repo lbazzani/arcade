@@ -43,21 +43,39 @@ const COLORS = {
     beak: '#FF6B35',
     eye: '#000',
     eyeWhite: '#FFF',
+    cheek: '#FFB347',
   },
   pipe: {
-    main: '#2ECC71',
-    dark: '#27AE60',
-    highlight: '#58D68D',
-    cap: '#27AE60',
-    capHighlight: '#2ECC71',
+    main: '#4CD137',
+    dark: '#2F8E1F',
+    highlight: '#7BED6E',
+    cap: '#44BD32',
+    capHighlight: '#7BED6E',
+    stripe: 'rgba(255,255,255,0.15)',
   },
-  cloud: 'rgba(255, 255, 255, 0.3)',
+  sky: {
+    top: '#4FC3F7',
+    middle: '#81D4FA',
+    bottom: '#B3E5FC',
+  },
+  ground: {
+    grass: '#7CB342',
+    grassDark: '#558B2F',
+    dirt: '#8D6E63',
+    dirtDark: '#6D4C41',
+  },
+  sun: {
+    core: '#FFEB3B',
+    glow: 'rgba(255, 235, 59, 0.3)',
+  },
+  cloud: 'rgba(255, 255, 255, 0.85)',
+  cloudShadow: 'rgba(200, 200, 200, 0.3)',
 };
 
 // Componente uccellino
 const Bird = ({ y, rotation, wingUp, cellSize }: { y: number; rotation: number; wingUp: boolean; cellSize: number }) => {
-  const birdWidth = cellSize * BIRD_SIZE * 1.3;
-  const birdHeight = cellSize * BIRD_SIZE;
+  const birdWidth = cellSize * BIRD_SIZE * 1.4;
+  const birdHeight = cellSize * BIRD_SIZE * 1.1;
 
   return (
     <View
@@ -70,7 +88,19 @@ const Bird = ({ y, rotation, wingUp, cellSize }: { y: number; rotation: number; 
         transform: [{ rotate: `${rotation}deg` }],
       }}
     >
-      {/* Corpo */}
+      {/* Ombra del corpo */}
+      <View
+        style={{
+          position: 'absolute',
+          left: 2,
+          top: 2,
+          width: birdWidth,
+          height: birdHeight,
+          backgroundColor: 'rgba(0,0,0,0.15)',
+          borderRadius: birdHeight / 2,
+        }}
+      />
+      {/* Corpo principale */}
       <View
         style={{
           position: 'absolute',
@@ -80,43 +110,87 @@ const Bird = ({ y, rotation, wingUp, cellSize }: { y: number; rotation: number; 
           height: birdHeight,
           backgroundColor: COLORS.bird.body,
           borderRadius: birdHeight / 2,
+          borderWidth: 1,
+          borderColor: '#E6B800',
+        }}
+      />
+      {/* Highlight sul corpo */}
+      <View
+        style={{
+          position: 'absolute',
+          left: birdWidth * 0.1,
+          top: birdHeight * 0.1,
+          width: birdWidth * 0.3,
+          height: birdHeight * 0.25,
+          backgroundColor: 'rgba(255,255,255,0.4)',
+          borderRadius: birdHeight * 0.15,
         }}
       />
       {/* Pancia */}
       <View
         style={{
           position: 'absolute',
-          left: birdWidth * 0.15,
-          top: birdHeight * 0.35,
+          left: birdWidth * 0.12,
+          top: birdHeight * 0.38,
           width: birdWidth * 0.5,
-          height: birdHeight * 0.5,
+          height: birdHeight * 0.48,
           backgroundColor: COLORS.bird.belly,
           borderRadius: birdHeight * 0.25,
+        }}
+      />
+      {/* Guancia */}
+      <View
+        style={{
+          position: 'absolute',
+          right: birdWidth * 0.22,
+          top: birdHeight * 0.5,
+          width: birdWidth * 0.18,
+          height: birdHeight * 0.15,
+          backgroundColor: COLORS.bird.cheek,
+          borderRadius: birdHeight * 0.1,
+          opacity: 0.7,
         }}
       />
       {/* Ala */}
       <View
         style={{
           position: 'absolute',
-          left: birdWidth * 0.2,
-          top: wingUp ? birdHeight * 0.15 : birdHeight * 0.4,
-          width: birdWidth * 0.4,
-          height: birdHeight * 0.35,
+          left: birdWidth * 0.18,
+          top: wingUp ? birdHeight * 0.12 : birdHeight * 0.42,
+          width: birdWidth * 0.42,
+          height: birdHeight * 0.38,
           backgroundColor: COLORS.bird.wing,
-          borderRadius: birdHeight * 0.15,
-          transform: [{ rotate: wingUp ? '-15deg' : '15deg' }],
+          borderRadius: birdHeight * 0.18,
+          transform: [{ rotate: wingUp ? '-20deg' : '15deg' }],
+          borderWidth: 1,
+          borderColor: '#CC7700',
+        }}
+      />
+      {/* Dettaglio ala */}
+      <View
+        style={{
+          position: 'absolute',
+          left: birdWidth * 0.22,
+          top: wingUp ? birdHeight * 0.18 : birdHeight * 0.48,
+          width: birdWidth * 0.25,
+          height: birdHeight * 0.15,
+          backgroundColor: 'rgba(255,255,255,0.3)',
+          borderRadius: birdHeight * 0.08,
+          transform: [{ rotate: wingUp ? '-20deg' : '15deg' }],
         }}
       />
       {/* Occhio - parte bianca */}
       <View
         style={{
           position: 'absolute',
-          right: birdWidth * 0.12,
-          top: birdHeight * 0.18,
-          width: birdWidth * 0.28,
-          height: birdHeight * 0.35,
+          right: birdWidth * 0.1,
+          top: birdHeight * 0.15,
+          width: birdWidth * 0.32,
+          height: birdHeight * 0.4,
           backgroundColor: COLORS.bird.eyeWhite,
-          borderRadius: birdHeight * 0.18,
+          borderRadius: birdHeight * 0.2,
+          borderWidth: 1,
+          borderColor: '#ddd',
         }}
       >
         {/* Pupilla */}
@@ -124,11 +198,23 @@ const Bird = ({ y, rotation, wingUp, cellSize }: { y: number; rotation: number; 
           style={{
             position: 'absolute',
             right: birdWidth * 0.04,
-            top: birdHeight * 0.08,
-            width: birdWidth * 0.14,
-            height: birdHeight * 0.18,
+            top: birdHeight * 0.1,
+            width: birdWidth * 0.16,
+            height: birdHeight * 0.22,
             backgroundColor: COLORS.bird.eye,
-            borderRadius: birdHeight * 0.1,
+            borderRadius: birdHeight * 0.12,
+          }}
+        />
+        {/* Riflesso occhio */}
+        <View
+          style={{
+            position: 'absolute',
+            right: birdWidth * 0.06,
+            top: birdHeight * 0.12,
+            width: birdWidth * 0.06,
+            height: birdHeight * 0.08,
+            backgroundColor: '#fff',
+            borderRadius: birdHeight * 0.04,
           }}
         />
       </View>
@@ -136,25 +222,29 @@ const Bird = ({ y, rotation, wingUp, cellSize }: { y: number; rotation: number; 
       <View
         style={{
           position: 'absolute',
-          right: -birdWidth * 0.15,
+          right: -birdWidth * 0.18,
           top: birdHeight * 0.35,
-          width: birdWidth * 0.3,
-          height: birdHeight * 0.2,
+          width: birdWidth * 0.35,
+          height: birdHeight * 0.22,
           backgroundColor: COLORS.bird.beak,
-          borderTopRightRadius: birdHeight * 0.1,
+          borderTopRightRadius: birdHeight * 0.12,
           borderBottomRightRadius: birdHeight * 0.05,
+          borderWidth: 1,
+          borderColor: '#CC4400',
         }}
       />
       {/* Becco inferiore */}
       <View
         style={{
           position: 'absolute',
-          right: -birdWidth * 0.1,
-          top: birdHeight * 0.5,
-          width: birdWidth * 0.22,
-          height: birdHeight * 0.15,
+          right: -birdWidth * 0.12,
+          top: birdHeight * 0.52,
+          width: birdWidth * 0.26,
+          height: birdHeight * 0.18,
           backgroundColor: '#FF8C42',
-          borderBottomRightRadius: birdHeight * 0.08,
+          borderBottomRightRadius: birdHeight * 0.1,
+          borderWidth: 1,
+          borderColor: '#CC6600',
         }}
       />
     </View>
@@ -164,8 +254,8 @@ const Bird = ({ y, rotation, wingUp, cellSize }: { y: number; rotation: number; 
 // Componente tubo
 const Pipe = ({ x, gapY, cellSize }: { x: number; gapY: number; cellSize: number }) => {
   const pipeWidth = PIPE_WIDTH * cellSize;
-  const capWidth = pipeWidth * 1.2;
-  const capHeight = cellSize * 0.6;
+  const capWidth = pipeWidth * 1.25;
+  const capHeight = cellSize * 0.7;
   const gapTop = (gapY - PIPE_GAP / 2) * cellSize;
   const gapBottom = (gapY + PIPE_GAP / 2) * cellSize;
 
@@ -181,6 +271,18 @@ const Pipe = ({ x, gapY, cellSize }: { x: number; gapY: number; cellSize: number
           height: gapTop,
         }}
       >
+        {/* Ombra tubo */}
+        <View
+          style={{
+            position: 'absolute',
+            left: (capWidth - pipeWidth) / 2 + 3,
+            top: 0,
+            width: pipeWidth,
+            height: gapTop - capHeight,
+            backgroundColor: 'rgba(0,0,0,0.15)',
+            borderRadius: 2,
+          }}
+        />
         {/* Corpo tubo */}
         <View
           style={{
@@ -190,12 +292,38 @@ const Pipe = ({ x, gapY, cellSize }: { x: number; gapY: number; cellSize: number
             width: pipeWidth,
             height: gapTop - capHeight,
             backgroundColor: COLORS.pipe.main,
-            borderLeftWidth: pipeWidth * 0.08,
-            borderLeftColor: COLORS.pipe.highlight,
-            borderRightWidth: pipeWidth * 0.12,
-            borderRightColor: COLORS.pipe.dark,
+            borderRadius: 2,
+            overflow: 'hidden',
           }}
-        />
+        >
+          {/* Highlight sinistro */}
+          <View style={{
+            position: 'absolute',
+            left: 0,
+            top: 0,
+            width: pipeWidth * 0.15,
+            height: '100%',
+            backgroundColor: COLORS.pipe.highlight,
+          }} />
+          {/* Ombra destra */}
+          <View style={{
+            position: 'absolute',
+            right: 0,
+            top: 0,
+            width: pipeWidth * 0.2,
+            height: '100%',
+            backgroundColor: COLORS.pipe.dark,
+          }} />
+          {/* Stripe decorativo */}
+          <View style={{
+            position: 'absolute',
+            left: pipeWidth * 0.25,
+            top: 0,
+            width: pipeWidth * 0.08,
+            height: '100%',
+            backgroundColor: COLORS.pipe.stripe,
+          }} />
+        </View>
         {/* Cappuccio tubo */}
         <View
           style={{
@@ -205,15 +333,31 @@ const Pipe = ({ x, gapY, cellSize }: { x: number; gapY: number; cellSize: number
             width: capWidth,
             height: capHeight,
             backgroundColor: COLORS.pipe.cap,
-            borderRadius: cellSize * 0.1,
-            borderLeftWidth: capWidth * 0.06,
-            borderLeftColor: COLORS.pipe.capHighlight,
-            borderRightWidth: capWidth * 0.08,
-            borderRightColor: COLORS.pipe.dark,
-            borderBottomWidth: capHeight * 0.15,
-            borderBottomColor: COLORS.pipe.dark,
+            borderRadius: cellSize * 0.15,
+            borderWidth: 2,
+            borderColor: COLORS.pipe.dark,
+            overflow: 'hidden',
           }}
-        />
+        >
+          {/* Highlight cappuccio */}
+          <View style={{
+            position: 'absolute',
+            left: 0,
+            top: 0,
+            width: capWidth * 0.15,
+            height: '100%',
+            backgroundColor: COLORS.pipe.capHighlight,
+          }} />
+          {/* Ombra cappuccio */}
+          <View style={{
+            position: 'absolute',
+            right: 0,
+            top: 0,
+            width: capWidth * 0.15,
+            height: '100%',
+            backgroundColor: COLORS.pipe.dark,
+          }} />
+        </View>
       </View>
 
       {/* Tubo inferiore */}
@@ -235,13 +379,41 @@ const Pipe = ({ x, gapY, cellSize }: { x: number; gapY: number; cellSize: number
             width: capWidth,
             height: capHeight,
             backgroundColor: COLORS.pipe.cap,
-            borderRadius: cellSize * 0.1,
-            borderLeftWidth: capWidth * 0.06,
-            borderLeftColor: COLORS.pipe.capHighlight,
-            borderRightWidth: capWidth * 0.08,
-            borderRightColor: COLORS.pipe.dark,
-            borderTopWidth: capHeight * 0.15,
-            borderTopColor: COLORS.pipe.capHighlight,
+            borderRadius: cellSize * 0.15,
+            borderWidth: 2,
+            borderColor: COLORS.pipe.dark,
+            overflow: 'hidden',
+          }}
+        >
+          {/* Highlight cappuccio */}
+          <View style={{
+            position: 'absolute',
+            left: 0,
+            top: 0,
+            width: capWidth * 0.15,
+            height: '100%',
+            backgroundColor: COLORS.pipe.capHighlight,
+          }} />
+          {/* Ombra cappuccio */}
+          <View style={{
+            position: 'absolute',
+            right: 0,
+            top: 0,
+            width: capWidth * 0.15,
+            height: '100%',
+            backgroundColor: COLORS.pipe.dark,
+          }} />
+        </View>
+        {/* Ombra corpo tubo */}
+        <View
+          style={{
+            position: 'absolute',
+            left: (capWidth - pipeWidth) / 2 + 3,
+            top: capHeight,
+            width: pipeWidth,
+            height: GAME_HEIGHT * cellSize - gapBottom - capHeight,
+            backgroundColor: 'rgba(0,0,0,0.15)',
+            borderRadius: 2,
           }}
         />
         {/* Corpo tubo */}
@@ -253,44 +425,233 @@ const Pipe = ({ x, gapY, cellSize }: { x: number; gapY: number; cellSize: number
             width: pipeWidth,
             height: GAME_HEIGHT * cellSize - gapBottom - capHeight,
             backgroundColor: COLORS.pipe.main,
-            borderLeftWidth: pipeWidth * 0.08,
-            borderLeftColor: COLORS.pipe.highlight,
-            borderRightWidth: pipeWidth * 0.12,
-            borderRightColor: COLORS.pipe.dark,
+            borderRadius: 2,
+            overflow: 'hidden',
           }}
-        />
+        >
+          {/* Highlight sinistro */}
+          <View style={{
+            position: 'absolute',
+            left: 0,
+            top: 0,
+            width: pipeWidth * 0.15,
+            height: '100%',
+            backgroundColor: COLORS.pipe.highlight,
+          }} />
+          {/* Ombra destra */}
+          <View style={{
+            position: 'absolute',
+            right: 0,
+            top: 0,
+            width: pipeWidth * 0.2,
+            height: '100%',
+            backgroundColor: COLORS.pipe.dark,
+          }} />
+          {/* Stripe decorativo */}
+          <View style={{
+            position: 'absolute',
+            left: pipeWidth * 0.25,
+            top: 0,
+            width: pipeWidth * 0.08,
+            height: '100%',
+            backgroundColor: COLORS.pipe.stripe,
+          }} />
+        </View>
       </View>
     </>
+  );
+};
+
+// Sole
+const Sun = ({ cellSize }: { cellSize: number }) => {
+  const sunSize = cellSize * 2;
+  return (
+    <View
+      style={{
+        position: 'absolute',
+        right: cellSize * 1.5,
+        top: cellSize * 1,
+      }}
+    >
+      {/* Alone esterno */}
+      <View
+        style={{
+          position: 'absolute',
+          left: -sunSize * 0.3,
+          top: -sunSize * 0.3,
+          width: sunSize * 1.6,
+          height: sunSize * 1.6,
+          backgroundColor: COLORS.sun.glow,
+          borderRadius: sunSize * 0.8,
+        }}
+      />
+      {/* Alone medio */}
+      <View
+        style={{
+          position: 'absolute',
+          left: -sunSize * 0.15,
+          top: -sunSize * 0.15,
+          width: sunSize * 1.3,
+          height: sunSize * 1.3,
+          backgroundColor: 'rgba(255, 235, 59, 0.4)',
+          borderRadius: sunSize * 0.65,
+        }}
+      />
+      {/* Sole principale */}
+      <View
+        style={{
+          width: sunSize,
+          height: sunSize,
+          backgroundColor: COLORS.sun.core,
+          borderRadius: sunSize / 2,
+        }}
+      />
+      {/* Highlight */}
+      <View
+        style={{
+          position: 'absolute',
+          left: sunSize * 0.15,
+          top: sunSize * 0.15,
+          width: sunSize * 0.3,
+          height: sunSize * 0.25,
+          backgroundColor: 'rgba(255,255,255,0.6)',
+          borderRadius: sunSize * 0.15,
+        }}
+      />
+    </View>
   );
 };
 
 // Nuvole di sfondo
 const Clouds = ({ cellSize }: { cellSize: number }) => {
   const clouds = [
-    { x: 1, y: 2, scale: 1 },
-    { x: 6, y: 4, scale: 0.7 },
-    { x: 3, y: 8, scale: 0.9 },
-    { x: 8, y: 1, scale: 0.6 },
-    { x: 2, y: 12, scale: 0.8 },
+    { x: 0.5, y: 2, scale: 1.2 },
+    { x: 5.5, y: 3.5, scale: 0.8 },
+    { x: 2.5, y: 6, scale: 1 },
+    { x: 7, y: 8, scale: 0.7 },
+    { x: 1, y: 10, scale: 0.9 },
   ];
 
   return (
     <>
-      {clouds.map((cloud, i) => (
+      {clouds.map((cloud, i) => {
+        const cloudWidth = cellSize * 2.5 * cloud.scale;
+        const cloudHeight = cellSize * 1.2 * cloud.scale;
+        return (
+          <View
+            key={`cloud-${i}`}
+            style={{
+              position: 'absolute',
+              left: cloud.x * cellSize,
+              top: cloud.y * cellSize,
+              flexDirection: 'row',
+              alignItems: 'center',
+            }}
+          >
+            {/* Ombra nuvola */}
+            <View
+              style={{
+                position: 'absolute',
+                left: 2,
+                top: 3,
+                width: cloudWidth,
+                height: cloudHeight * 0.8,
+                backgroundColor: COLORS.cloudShadow,
+                borderRadius: cloudHeight * 0.4,
+              }}
+            />
+            {/* Nuvola principale */}
+            <View
+              style={{
+                width: cloudWidth,
+                height: cloudHeight * 0.8,
+                backgroundColor: COLORS.cloud,
+                borderRadius: cloudHeight * 0.4,
+              }}
+            />
+            {/* Bubble sinistra */}
+            <View
+              style={{
+                position: 'absolute',
+                left: cloudWidth * 0.1,
+                top: -cloudHeight * 0.25,
+                width: cloudWidth * 0.4,
+                height: cloudHeight * 0.6,
+                backgroundColor: COLORS.cloud,
+                borderRadius: cloudHeight * 0.3,
+              }}
+            />
+            {/* Bubble destra */}
+            <View
+              style={{
+                position: 'absolute',
+                left: cloudWidth * 0.45,
+                top: -cloudHeight * 0.35,
+                width: cloudWidth * 0.5,
+                height: cloudHeight * 0.7,
+                backgroundColor: COLORS.cloud,
+                borderRadius: cloudHeight * 0.35,
+              }}
+            />
+          </View>
+        );
+      })}
+    </>
+  );
+};
+
+// Terra/Prato
+const Ground = ({ cellSize }: { cellSize: number }) => {
+  const groundHeight = cellSize * 1.5;
+  const grassHeight = cellSize * 0.4;
+
+  return (
+    <View
+      style={{
+        position: 'absolute',
+        left: 0,
+        bottom: 0,
+        right: 0,
+        height: groundHeight,
+      }}
+    >
+      {/* Terra */}
+      <View
+        style={{
+          position: 'absolute',
+          left: 0,
+          top: grassHeight,
+          right: 0,
+          bottom: 0,
+          backgroundColor: COLORS.ground.dirt,
+        }}
+      >
+        {/* Strato scuro */}
         <View
-          key={`cloud-${i}`}
           style={{
             position: 'absolute',
-            left: cloud.x * cellSize,
-            top: cloud.y * cellSize,
-            width: cellSize * 2.5 * cloud.scale,
-            height: cellSize * 1 * cloud.scale,
-            backgroundColor: COLORS.cloud,
-            borderRadius: cellSize * 0.5,
+            left: 0,
+            top: 0,
+            right: 0,
+            height: '30%',
+            backgroundColor: COLORS.ground.dirtDark,
           }}
         />
-      ))}
-    </>
+      </View>
+      {/* Erba */}
+      <View
+        style={{
+          position: 'absolute',
+          left: 0,
+          top: 0,
+          right: 0,
+          height: grassHeight,
+          backgroundColor: COLORS.ground.grass,
+          borderTopWidth: 2,
+          borderTopColor: COLORS.ground.grassDark,
+        }}
+      />
+    </View>
   );
 };
 
@@ -303,25 +664,42 @@ const GameBoard = (props: any) => {
       style={{
         width: GAME_WIDTH * cellSize,
         height: GAME_HEIGHT * cellSize,
-        backgroundColor: '#87CEEB', // Cielo azzurro
+        backgroundColor: COLORS.sky.bottom,
         overflow: 'hidden',
       }}
     >
-      {/* Gradiente cielo (simulato) */}
+      {/* Gradiente cielo - strato superiore */}
       <View
         style={{
           position: 'absolute',
           left: 0,
           top: 0,
           right: 0,
-          height: GAME_HEIGHT * cellSize * 0.6,
-          backgroundColor: '#5BC0EB',
-          opacity: 0.5,
+          height: GAME_HEIGHT * cellSize * 0.35,
+          backgroundColor: COLORS.sky.top,
+        }}
+      />
+      {/* Gradiente cielo - strato medio */}
+      <View
+        style={{
+          position: 'absolute',
+          left: 0,
+          top: GAME_HEIGHT * cellSize * 0.25,
+          right: 0,
+          height: GAME_HEIGHT * cellSize * 0.35,
+          backgroundColor: COLORS.sky.middle,
+          opacity: 0.7,
         }}
       />
 
+      {/* Sole */}
+      <Sun cellSize={cellSize} />
+
       {/* Nuvole */}
       <Clouds cellSize={cellSize} />
+
+      {/* Terra/Prato */}
+      <Ground cellSize={cellSize} />
 
       {/* Tubi */}
       {pipes.map((pipe: Pipe) => (
